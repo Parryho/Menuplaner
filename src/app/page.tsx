@@ -8,8 +8,10 @@ interface Event {
   date: string;
   event_type: string;
   pax: number;
-  time: string;
+  time_start: string;
+  time_end: string;
   description: string;
+  status: string;
 }
 
 export default function Dashboard() {
@@ -37,7 +39,11 @@ export default function Dashboard() {
   }, []);
 
   const rotationWeek = ((currentWeek - 1) % 6) + 1;
-  const upcomingEvents = events.slice(0, 4);
+  const todayStr = new Date().toISOString().split('T')[0];
+  const upcomingEvents = events
+    .filter(e => e.date >= todayStr && e.status !== 'abgesagt')
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.time_start || '').localeCompare(b.time_start || ''))
+    .slice(0, 4);
 
   // Get current date info
   const today = new Date();
@@ -208,12 +214,14 @@ export default function Dashboard() {
                       className="flex items-center gap-4 p-4 bg-primary-50 rounded-lg border border-primary-100 hover:border-accent-200 hover:bg-accent-50/30 transition-colors"
                     >
                       <div className="flex-shrink-0 text-center">
-                        <div className="text-sm font-bold text-primary-900 w-24">{event.date}</div>
-                        <div className="text-xs text-primary-600 mt-0.5">{event.time}</div>
+                        <div className="text-sm font-bold text-primary-900 w-24">
+                          {new Date(event.date + 'T00:00').toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                        </div>
+                        {event.time_start && <div className="text-xs text-primary-600 mt-0.5">{event.time_start}{event.time_end ? ` - ${event.time_end}` : ''}</div>}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-primary-900">{event.event_type}</span>
+                          <span className="font-semibold text-primary-900 capitalize">{event.event_type}</span>
                           <span className="text-xs bg-accent-100 text-accent-700 px-2 py-0.5 rounded font-medium">
                             {event.pax} PAX
                           </span>
