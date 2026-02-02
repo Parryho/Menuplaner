@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   if (from && to) {
     events = db.prepare('SELECT * FROM ak_events WHERE date BETWEEN ? AND ? ORDER BY date, time_start').all(from, to);
   } else {
-    events = db.prepare('SELECT * FROM ak_events ORDER BY date DESC, time_start LIMIT 50').all();
+    events = db.prepare('SELECT * FROM ak_events ORDER BY date ASC, time_start ASC').all();
   }
   return NextResponse.json(events);
 }

@@ -85,9 +85,19 @@ export default function EventsPage() {
     setShowForm(true);
   }
 
+  const today = new Date().toISOString().split('T')[0];
   const filtered = events
     .filter(e => !filterType || e.event_type === filterType)
-    .filter(e => !filterStatus || e.status === filterStatus);
+    .filter(e => !filterStatus || e.status === filterStatus)
+    .sort((a, b) => {
+      const aFuture = a.date >= today ? 0 : 1;
+      const bFuture = b.date >= today ? 0 : 1;
+      if (aFuture !== bFuture) return aFuture - bFuture;
+      // Future: ascending (next event first), past: descending (most recent first)
+      return aFuture === 0
+        ? a.date.localeCompare(b.date) || (a.time_start || '').localeCompare(b.time_start || '')
+        : b.date.localeCompare(a.date) || (b.time_start || '').localeCompare(a.time_start || '');
+    });
 
   // Stats
   const upcoming = events.filter(e => e.status === 'geplant' || e.status === 'bestaetigt').length;

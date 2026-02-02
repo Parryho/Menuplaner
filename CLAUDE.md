@@ -148,7 +148,8 @@ menuplan-generator/
 - 7 Event-Typen: brunch, ball, buffet, bankett, empfang, seminar, sonstiges
 - 4 Status: geplant, bestaetigt, abgesagt, abgeschlossen
 - Erweiterte Felder: time_start, time_end, contact_person, room
-- Airtable-Sync: automatisches Feld-Mapping, bidirektionale Sync
+- Airtable-Sync: NUR LESEN, niemals nach Airtable schreiben! Read-only Integration.
+- Tabelle: "Catering Events" mit Feldern: Event Name, Event Date, Event Time, End Time, Type of Event, Special Requests, Status, Location, Client, Staff
 - Menu-Items pro Event (ak_event_menu_items Tabelle)
 - Professionelle Card-basierte UI mit Typ-Icons, Status-Farben, Datum-Block
 

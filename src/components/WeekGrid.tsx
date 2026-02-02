@@ -33,17 +33,21 @@ interface WeekGridProps {
   compact?: boolean;
   year?: number;
   calendarWeek?: number;
+  dates?: Record<number, string>;
 }
 
-export default function WeekGrid({ days, paxCity = '60', paxSued = '45', compact, year, calendarWeek }: WeekGridProps) {
+export default function WeekGrid({ days, paxCity = '60', paxSued = '45', compact, year, calendarWeek, dates }: WeekGridProps) {
   return (
     <div className="space-y-4">
-      {days.map((day) => (
+      {[...days].sort((a, b) => ((a.dayOfWeek || 7) - (b.dayOfWeek || 7))).map((day) => (
         <div key={day.dayOfWeek} className="border border-primary-200 rounded-card overflow-hidden shadow-card">
           {/* Day Header */}
           <div className="bg-gradient-to-r from-primary-800 to-primary-700 px-4 py-2 flex items-center justify-between">
             <span className="font-bold text-white text-sm tracking-wide">
               {DAY_NAMES[day.dayOfWeek]}
+              {dates?.[day.dayOfWeek] && (
+                <span className="ml-2 font-normal text-primary-300">{dates[day.dayOfWeek]}</span>
+              )}
             </span>
             <div className="flex items-center gap-3">
               <span className="text-[10px] text-primary-300 bg-primary-900/30 px-2 py-0.5 rounded">
