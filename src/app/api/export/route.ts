@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { seedDatabase } from '@/lib/seed';
 import { getWeeklyPlan, generateWeekFromRotation, DAY_NAMES_SHORT, type MealSlot } from '@/lib/rotation';

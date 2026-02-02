@@ -8,7 +8,7 @@ interface DishSeed {
 }
 
 // =====================================================================
-// GERICHTELISTE -- 6-Wochen-Rotation Hotelküche Österreich (128 Gerichte)
+// GERICHTELISTE -- 6-Wochen-Rotation Hotelküche Österreich (168 Gerichte)
 // =====================================================================
 // Allergen-Codes gemäß EU-VO 1169/2011 / Codex-Empfehlung Österreich:
 //   A = Glutenhaltiges Getreide   B = Krebstiere
@@ -27,7 +27,7 @@ interface DishSeed {
 
 const DISHES: DishSeed[] = [
   // ==========================================================================
-  // SUPPEN (18 Stück)
+  // SUPPEN (23 Stück)
   // ==========================================================================
   { name: 'Rindsuppe mit Frittaten', category: 'suppe', allergens: 'ACGL' },
   { name: 'Frittatensuppe', category: 'suppe', allergens: 'ACGL' },
@@ -47,9 +47,14 @@ const DISHES: DishSeed[] = [
   { name: 'Knoblauchcremesuppe', category: 'suppe', allergens: 'AGL' },
   { name: 'Zwiebelsuppe', category: 'suppe', allergens: 'AGL' },
   { name: 'Klare Gemüsebrühe mit Einlage', category: 'suppe', allergens: 'ACL' },
+  { name: 'Gulaschsuppe', category: 'suppe', allergens: 'ALO' },
+  { name: 'Schwammerlcremesuppe', category: 'suppe', allergens: 'AGL' },
+  { name: 'Selleriecremesuppe', category: 'suppe', allergens: 'AGL' },
+  { name: 'Lauchcremesuppe', category: 'suppe', allergens: 'AGL' },
+  { name: 'Kaspressknödelsuppe', category: 'suppe', allergens: 'ACGL' },
 
   // ==========================================================================
-  // FLEISCHGERICHTE (32 Stück)
+  // FLEISCHGERICHTE (42 Stück)
   // ==========================================================================
   { name: 'Wiener Schnitzel', category: 'fleisch', allergens: 'ACG' },
   { name: 'Schnitzel vom Schwein', category: 'fleisch', allergens: 'ACG' },
@@ -81,11 +86,21 @@ const DISHES: DishSeed[] = [
   { name: 'Fleischknödel', category: 'fleisch', allergens: 'ACGL' },
   { name: 'Steirisches Wurzelfleisch', category: 'fleisch', allergens: 'AMLO' },
   { name: 'Hühner-Gemüse-Pfanne', category: 'fleisch', allergens: 'AFL' },
-  { name: 'Puten-Curry mit Reis', category: 'fleisch', allergens: 'AGL' },
+  { name: 'Puten-Curry', category: 'fleisch', allergens: 'AGL' },
   { name: 'Rindsroulade', category: 'fleisch', allergens: 'ACGMLO' },
+  { name: 'Backhendl', category: 'fleisch', allergens: 'ACG' },
+  { name: 'Cordon Bleu', category: 'fleisch', allergens: 'ACG' },
+  { name: 'Jägerschnitzel', category: 'fleisch', allergens: 'AGLO' },
+  { name: 'Rahmschnitzel', category: 'fleisch', allergens: 'AGLO' },
+  { name: 'Kümmelbraten', category: 'fleisch', allergens: 'AGL' },
+  { name: 'Reisfleisch', category: 'fleisch', allergens: 'AL' },
+  { name: 'Leberkäse', category: 'fleisch', allergens: 'AGMO' },
+  { name: 'Beuschel', category: 'fleisch', allergens: 'AGLO' },
+  { name: 'Kalbsgulasch', category: 'fleisch', allergens: 'AGLO' },
+  { name: 'Gebackene Leber', category: 'fleisch', allergens: 'ACG' },
 
   // ==========================================================================
-  // FISCHGERICHTE (12 Stück)
+  // FISCHGERICHTE (14 Stück)
   // ==========================================================================
   { name: 'Lachsfilet', category: 'fisch', allergens: 'DG' },
   { name: 'Seehechtfilet', category: 'fisch', allergens: 'DG' },
@@ -99,9 +114,11 @@ const DISHES: DishSeed[] = [
   { name: 'Fischfilet im Backteig', category: 'fisch', allergens: 'ACDG' },
   { name: 'Thunfisch-Nudelpfanne', category: 'fisch', allergens: 'ACDG' },
   { name: 'Kabeljaufilet mit Senfkruste', category: 'fisch', allergens: 'ACDGM' },
+  { name: 'Karpfen gebacken', category: 'fisch', allergens: 'ACDG' },
+  { name: 'Saibling gebraten', category: 'fisch', allergens: 'ADG' },
 
   // ==========================================================================
-  // VEGETARISCHE GERICHTE (22 Stück)
+  // VEGETARISCHE GERICHTE (28 Stück)
   // ==========================================================================
   { name: 'Käsespätzle', category: 'vegetarisch', allergens: 'ACG' },
   { name: 'Spinat-Tortellini', category: 'vegetarisch', allergens: 'ACG' },
@@ -121,13 +138,19 @@ const DISHES: DishSeed[] = [
   { name: 'Palatschinken', category: 'vegetarisch', allergens: 'ACG' },
   { name: 'Gemüsestrudel', category: 'vegetarisch', allergens: 'ACG' },
   { name: 'Erdäpfelgulasch', category: 'vegetarisch', allergens: 'ALO' },
-  { name: 'Linsendalgemüse mit Reis', category: 'vegetarisch', allergens: 'L' },
+  { name: 'Linsendalgemüse', category: 'vegetarisch', allergens: 'L' },
   { name: 'Germknödel', category: 'vegetarisch', allergens: 'ACG' },
   { name: 'Gemüse-Couscous', category: 'vegetarisch', allergens: 'AL' },
   { name: 'Ofengemüse-Teller mit Kräuterdip', category: 'vegetarisch', allergens: 'G' },
+  { name: 'Gebackener Emmentaler', category: 'vegetarisch', allergens: 'ACG' },
+  { name: 'Schwammerlgulasch', category: 'vegetarisch', allergens: 'AGL' },
+  { name: 'Mohnnudeln', category: 'vegetarisch', allergens: 'ACG' },
+  { name: 'Kürbisrisotto', category: 'vegetarisch', allergens: 'AG' },
+  { name: 'Tiroler Gröstl vegetarisch', category: 'vegetarisch', allergens: 'ACG' },
+  { name: 'Kartoffelpuffer', category: 'vegetarisch', allergens: 'AC' },
 
   // ==========================================================================
-  // BEILAGEN (28 Stück)
+  // BEILAGEN (38 Stück)
   // ==========================================================================
   { name: 'Kartoffelgratin', category: 'beilage', allergens: 'AG' },
   { name: 'Semmelknödel', category: 'beilage', allergens: 'ACGL' },
@@ -157,9 +180,19 @@ const DISHES: DishSeed[] = [
   { name: 'Bandnudeln', category: 'beilage', allergens: 'AC' },
   { name: 'Salzerdäpfel', category: 'beilage', allergens: '' },
   { name: 'Polenta', category: 'beilage', allergens: 'G' },
+  { name: 'Erdäpfelsalat', category: 'beilage', allergens: 'MO' },
+  { name: 'Blattsalat', category: 'beilage', allergens: '' },
+  { name: 'Gurkensalat', category: 'beilage', allergens: 'O' },
+  { name: 'Krautsalat', category: 'beilage', allergens: 'O' },
+  { name: 'Rotkraut', category: 'beilage', allergens: 'O' },
+  { name: 'Fisolen', category: 'beilage', allergens: 'G' },
+  { name: 'Djuvec-Reis', category: 'beilage', allergens: 'L' },
+  { name: 'Rahmfisolen', category: 'beilage', allergens: 'AG' },
+  { name: 'Apfelkren', category: 'beilage', allergens: 'GM' },
+  { name: 'Semmelkren', category: 'beilage', allergens: 'AGM' },
 
   // ==========================================================================
-  // DESSERTS (16 Stück)
+  // DESSERTS (23 Stück)
   // ==========================================================================
   { name: 'Dessertvariation', category: 'dessert', allergens: 'ACGH' },
   { name: 'Obstsalat', category: 'dessert', allergens: '' },
@@ -177,6 +210,13 @@ const DISHES: DishSeed[] = [
   { name: 'Reisauflauf mit Kirschen', category: 'dessert', allergens: 'CG' },
   { name: 'Schokokuchen', category: 'dessert', allergens: 'ACGHF' },
   { name: 'Marillenknödel', category: 'dessert', allergens: 'ACG' },
+  { name: 'Sachertorte', category: 'dessert', allergens: 'ACGH' },
+  { name: 'Linzer Torte', category: 'dessert', allergens: 'ACGH' },
+  { name: 'Topfenstrudel', category: 'dessert', allergens: 'ACG' },
+  { name: 'Milchrahmstrudel', category: 'dessert', allergens: 'ACG' },
+  { name: 'Powidltascherl', category: 'dessert', allergens: 'ACG' },
+  { name: 'Zwetschkenröster', category: 'dessert', allergens: 'O' },
+  { name: 'Salzburger Nockerl', category: 'dessert', allergens: 'ACG' },
 ];
 
 // Helper to get dish ID by name after seeding
@@ -230,7 +270,7 @@ const ROTATION_DATA: RotationEntry[] = [
   // SUED Abend
   { week_nr: 1, day_of_week: 1, meal: 'abend', location: 'sued',
     soup: 'Gemüsesuppe', main1: 'Puten-Rahmgeschnetzeltes', side1a: 'Kräuterreis', side1b: 'Buttergemüse',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Obstsalat' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Obstsalat' },
 
   // --- Dienstag W1 ---
   { week_nr: 1, day_of_week: 2, meal: 'mittag', location: 'city',
@@ -248,24 +288,24 @@ const ROTATION_DATA: RotationEntry[] = [
 
   // --- Mittwoch W1 ---
   { week_nr: 1, day_of_week: 3, meal: 'mittag', location: 'city',
-    soup: 'Kürbiscremesuppe', main1: 'Seehechtfilet', side1a: 'Couscous', side1b: 'Ofengemüse',
+    soup: 'Kürbiscremesuppe', main1: 'Seehechtfilet', side1a: 'Petersilienerdäpfel', side1b: 'Buttergemüse',
     main2: 'Gemüse-Lasagne', side2a: '', side2b: '', dessert: 'Schokomousse' },
   { week_nr: 1, day_of_week: 3, meal: 'abend', location: 'city',
-    soup: 'Grießnockerlsuppe', main1: 'Cevapcici', side1a: 'Reis', side1b: 'Röstzwiebel',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Panna Cotta' },
+    soup: 'Grießnockerlsuppe', main1: 'Cevapcici', side1a: 'Djuvec-Reis', side1b: 'Röstzwiebel',
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Panna Cotta' },
   { week_nr: 1, day_of_week: 3, meal: 'mittag', location: 'sued',
     soup: 'Kürbiscremesuppe', main1: 'Rinderbraten', side1a: 'Serviettenknödel', side1b: 'Bratensauce',
     main2: 'Spinatlasagne', side2a: '', side2b: '', dessert: 'Schokomousse' },
   { week_nr: 1, day_of_week: 3, meal: 'abend', location: 'sued',
     soup: 'Grießnockerlsuppe', main1: 'Faschierte Laibchen', side1a: 'Erdäpfelpüree', side1b: '',
-    main2: 'Krautfleckerl', side2a: '', side2b: '', dessert: 'Panna Cotta' },
+    main2: 'Krautfleckerl', side2a: 'Blattsalat', side2b: '', dessert: 'Panna Cotta' },
 
   // --- Donnerstag W1 ---
   { week_nr: 1, day_of_week: 4, meal: 'mittag', location: 'city',
     soup: 'Kartoffelcremesuppe', main1: 'Schnitzel vom Schwein', side1a: 'Erdäpfelpüree', side1b: 'Preiselbeeren',
     main2: 'Gemüsestrudel', side2a: 'Ofengemüse', side2b: '', dessert: 'Apfelstrudel' },
   { week_nr: 1, day_of_week: 4, meal: 'abend', location: 'city',
-    soup: 'Frittatensuppe', main1: 'Hühnerfilet', side1a: 'Kräuterreis', side1b: 'Buttergemüse',
+    soup: 'Frittatensuppe', main1: 'Backhendl', side1a: 'Erdäpfelsalat', side1b: 'Gurkensalat',
     main2: 'Eiernockerl', side2a: '', side2b: '', dessert: 'Grießflammeri' },
   { week_nr: 1, day_of_week: 4, meal: 'mittag', location: 'sued',
     soup: 'Kartoffelcremesuppe', main1: 'Putenschnitzel', side1a: 'Pommes', side1b: 'Preiselbeeren',
@@ -290,14 +330,14 @@ const ROTATION_DATA: RotationEntry[] = [
 
   // --- Samstag W1 ---
   { week_nr: 1, day_of_week: 6, meal: 'mittag', location: 'city',
-    soup: 'Spargelcremesuppe', main1: 'Tafelspitz', side1a: 'Schnittlauchsauce', side1b: 'Erdäpfelpüree',
+    soup: 'Spargelcremesuppe', main1: 'Tafelspitz', side1a: 'Apfelkren', side1b: 'Schnittlauchsauce',
     main2: 'Kartoffelrösti', side2a: 'Ofengemüse', side2b: '', dessert: 'Mohr im Hemd' },
   { week_nr: 1, day_of_week: 6, meal: 'abend', location: 'city',
     soup: 'Karottencremesuppe', main1: 'Paprikahendl', side1a: 'Bandnudeln', side1b: '',
     main2: 'Germknödel', side2a: '', side2b: '', dessert: 'Topfencreme mit Beeren' },
   { week_nr: 1, day_of_week: 6, meal: 'mittag', location: 'sued',
     soup: 'Spargelcremesuppe', main1: 'Schweinefilet', side1a: 'Ofenkartoffeln', side1b: 'Rahmsoße',
-    main2: 'Linsendalgemüse mit Reis', side2a: 'Reis', side2b: '', dessert: 'Mohr im Hemd' },
+    main2: 'Linsendalgemüse', side2a: 'Reis', side2b: '', dessert: 'Mohr im Hemd' },
   { week_nr: 1, day_of_week: 6, meal: 'abend', location: 'sued',
     soup: 'Karottencremesuppe', main1: 'Korma-Hühnerkeule', side1a: 'Erbsenreis', side1b: '',
     main2: 'Gemüse-Couscous', side2a: '', side2b: '', dessert: 'Topfencreme mit Beeren' },
@@ -307,7 +347,7 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Minestrone', main1: 'Rindsgeschnetzeltes', side1a: 'Butterspätzle', side1b: '',
     main2: 'Spinat-Schafkäse-Strudel', side2a: '', side2b: '', dessert: 'Buchteln mit Vanillesauce' },
   { week_nr: 1, day_of_week: 0, meal: 'abend', location: 'city',
-    soup: 'Erbsencremesuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelpüree', side1b: 'Preiselbeeren',
+    soup: 'Erbsencremesuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelsalat', side1b: 'Preiselbeeren',
     main2: 'Palatschinken', side2a: '', side2b: '', dessert: 'Joghurt mit Früchten' },
   { week_nr: 1, day_of_week: 0, meal: 'mittag', location: 'sued',
     soup: 'Minestrone', main1: 'Hühnergeschnetzeltes', side1a: 'Reis', side1b: 'Buttergemüse',
@@ -323,7 +363,7 @@ const ROTATION_DATA: RotationEntry[] = [
   // --- Montag W2 ---
   { week_nr: 2, day_of_week: 1, meal: 'mittag', location: 'city',
     soup: 'Kürbiscremesuppe', main1: 'Schweinsbraten', side1a: 'Semmelknödel', side1b: 'Sauerkraut',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Grießflammeri' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Grießflammeri' },
   { week_nr: 2, day_of_week: 1, meal: 'abend', location: 'city',
     soup: 'Rindsuppe mit Frittaten', main1: 'Hühnergeschnetzeltes', side1a: 'Reis', side1b: 'Buttergemüse',
     main2: 'Spinat-Tortellini', side2a: 'Tomatensauce', side2b: '', dessert: 'Obstsalat' },
@@ -339,7 +379,7 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Grießnockerlsuppe', main1: 'Rindsgeschnetzeltes', side1a: 'Butterspätzle', side1b: '',
     main2: 'Gemüselaibchen', side2a: 'Ofengemüse', side2b: '', dessert: 'Tiramisu' },
   { week_nr: 2, day_of_week: 2, meal: 'abend', location: 'city',
-    soup: 'Tomatencremesuppe', main1: 'Putenschnitzel', side1a: 'Pommes', side1b: '',
+    soup: 'Tomatencremesuppe', main1: 'Cordon Bleu', side1a: 'Pommes', side1b: 'Gurkensalat',
     main2: 'Topfenknödel', side2a: 'Apfelkompott', side2b: '', dessert: 'Reisauflauf mit Kirschen' },
   { week_nr: 2, day_of_week: 2, meal: 'mittag', location: 'sued',
     soup: 'Grießnockerlsuppe', main1: 'Schweinefilet', side1a: 'Ofenkartoffeln', side1b: 'Rahmsoße',
@@ -353,7 +393,7 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Minestrone', main1: 'Lachsfilet', side1a: 'Petersilienerdäpfel', side1b: 'Buttergemüse',
     main2: 'Bolognese vegetarisch', side2a: 'Bandnudeln', side2b: '', dessert: 'Panna Cotta' },
   { week_nr: 2, day_of_week: 3, meal: 'abend', location: 'city',
-    soup: 'Kartoffelcremesuppe', main1: 'Cevapcici', side1a: 'Reis', side1b: 'Röstzwiebel',
+    soup: 'Kartoffelcremesuppe', main1: 'Cevapcici', side1a: 'Djuvec-Reis', side1b: 'Röstzwiebel',
     main2: 'Kaiserschmarrn', side2a: 'Apfelkompott', side2b: '', dessert: 'Dessertvariation' },
   { week_nr: 2, day_of_week: 3, meal: 'mittag', location: 'sued',
     soup: 'Minestrone', main1: 'Forelle Müllerin', side1a: 'Petersilienerdäpfel', side1b: 'Buttergemüse',
@@ -368,12 +408,12 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Erdäpfelgulasch', side2a: '', side2b: '', dessert: 'Apfelstrudel' },
   { week_nr: 2, day_of_week: 4, meal: 'abend', location: 'city',
     soup: 'Leberknödelsuppe', main1: 'Hühnerfilet', side1a: 'Kräuterreis', side1b: '',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Joghurt mit Früchten' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Joghurt mit Früchten' },
   { week_nr: 2, day_of_week: 4, meal: 'mittag', location: 'sued',
     soup: 'Spargelcremesuppe', main1: 'Putenrollbraten', side1a: 'Gemüsereis', side1b: 'Bratensauce',
     main2: 'Spinat-Schafkäse-Strudel', side2a: '', side2b: '', dessert: 'Apfelstrudel' },
   { week_nr: 2, day_of_week: 4, meal: 'abend', location: 'sued',
-    soup: 'Leberknödelsuppe', main1: 'Puten-Curry mit Reis', side1a: 'Kräuterreis', side1b: '',
+    soup: 'Leberknödelsuppe', main1: 'Puten-Curry', side1a: 'Kräuterreis', side1b: '',
     main2: 'Palatschinken', side2a: '', side2b: '', dessert: 'Joghurt mit Früchten' },
 
   // --- Freitag W2 ---
@@ -388,15 +428,15 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Gemüsestrudel', side2a: 'Ofengemüse', side2b: '', dessert: 'Schokomousse' },
   { week_nr: 2, day_of_week: 5, meal: 'abend', location: 'sued',
     soup: 'Gemüsesuppe', main1: 'Fleischknödel', side1a: 'Sauerkraut', side1b: '',
-    main2: 'Krautfleckerl', side2a: '', side2b: '', dessert: 'Schokokuchen' },
+    main2: 'Krautfleckerl', side2a: 'Blattsalat', side2b: '', dessert: 'Schokokuchen' },
 
   // --- Samstag W2 ---
   { week_nr: 2, day_of_week: 6, meal: 'mittag', location: 'city',
-    soup: 'Brokkolicremesuppe', main1: 'Tafelspitz', side1a: 'Schnittlauchsauce', side1b: 'Erdäpfelpüree',
-    main2: 'Linsendalgemüse mit Reis', side2a: 'Reis', side2b: '', dessert: 'Buchteln mit Vanillesauce' },
+    soup: 'Brokkolicremesuppe', main1: 'Tafelspitz', side1a: 'Apfelkren', side1b: 'Schnittlauchsauce',
+    main2: 'Linsendalgemüse', side2a: 'Reis', side2b: '', dessert: 'Buchteln mit Vanillesauce' },
   { week_nr: 2, day_of_week: 6, meal: 'abend', location: 'city',
     soup: 'Knoblauchcremesuppe', main1: 'Gemüse-Hühnercurry', side1a: 'Kräuterreis', side1b: '',
-    main2: 'Gemüse-Couscous', side2a: '', side2b: '', dessert: 'Topfencreme mit Beeren' },
+    main2: 'Gemüse-Couscous', side2a: '', side2b: '', dessert: 'Sachertorte' },
   { week_nr: 2, day_of_week: 6, meal: 'mittag', location: 'sued',
     soup: 'Brokkolicremesuppe', main1: 'Naturschnitzel vom Schwein', side1a: 'Kartoffelgratin', side1b: 'Buttergemüse',
     main2: 'Kartoffelrösti', side2a: 'Ofengemüse', side2b: '', dessert: 'Buchteln mit Vanillesauce' },
@@ -409,7 +449,7 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Frittatensuppe', main1: 'Schweinefilet', side1a: 'Ofenkartoffeln', side1b: 'Rahmsoße',
     main2: 'Spinat-Schafkäse-Strudel', side2a: '', side2b: '', dessert: 'Mohr im Hemd' },
   { week_nr: 2, day_of_week: 0, meal: 'abend', location: 'city',
-    soup: 'Nudelsuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelpüree', side1b: 'Preiselbeeren',
+    soup: 'Nudelsuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelsalat', side1b: 'Preiselbeeren',
     main2: 'Germknödel', side2a: '', side2b: '', dessert: 'Pudding' },
   { week_nr: 2, day_of_week: 0, meal: 'mittag', location: 'sued',
     soup: 'Frittatensuppe', main1: 'Rinderbraten', side1a: 'Serviettenknödel', side1b: 'Bratensauce',
@@ -445,7 +485,7 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Fruchtknödel', side2a: 'Apfelkompott', side2b: '', dessert: 'Joghurt mit Früchten' },
   { week_nr: 3, day_of_week: 2, meal: 'mittag', location: 'sued',
     soup: 'Frittatensuppe', main1: 'Geschnetzeltes Zürcher Art', side1a: 'Butterspätzle', side1b: '',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Tiramisu' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Tiramisu' },
   { week_nr: 3, day_of_week: 2, meal: 'abend', location: 'sued',
     soup: 'Kürbiscremesuppe', main1: 'Hühnerfilet', side1a: 'Kräuterreis', side1b: 'Buttergemüse',
     main2: 'Topfenknödel', side2a: 'Apfelkompott', side2b: '', dessert: 'Joghurt mit Früchten' },
@@ -456,12 +496,12 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Käsespätzle', side2a: 'Röstzwiebel', side2b: '', dessert: 'Panna Cotta' },
   { week_nr: 3, day_of_week: 3, meal: 'abend', location: 'city',
     soup: 'Gemüsesuppe', main1: 'Geschnetzeltes Zürcher Art', side1a: 'Butterspätzle', side1b: '',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Vanilleeis mit Früchten' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Vanilleeis mit Früchten' },
   { week_nr: 3, day_of_week: 3, meal: 'mittag', location: 'sued',
     soup: 'Nudelsuppe', main1: 'Zanderfilet auf Gemüsebett', side1a: 'Salzerdäpfel', side1b: '',
     main2: 'Bolognese vegetarisch', side2a: 'Bandnudeln', side2b: '', dessert: 'Panna Cotta' },
   { week_nr: 3, day_of_week: 3, meal: 'abend', location: 'sued',
-    soup: 'Gemüsesuppe', main1: 'Cevapcici', side1a: 'Reis', side1b: 'Röstzwiebel',
+    soup: 'Gemüsesuppe', main1: 'Cevapcici', side1a: 'Djuvec-Reis', side1b: 'Röstzwiebel',
     main2: 'Kaiserschmarrn', side2a: 'Apfelkompott', side2b: '', dessert: 'Vanilleeis mit Früchten' },
 
   // --- Donnerstag W3 ---
@@ -473,14 +513,14 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Kartoffelrösti', side2a: 'Ofengemüse', side2b: '', dessert: 'Schokomousse' },
   { week_nr: 3, day_of_week: 4, meal: 'mittag', location: 'sued',
     soup: 'Leberknödelsuppe', main1: 'Steirisches Wurzelfleisch', side1a: 'Salzerdäpfel', side1b: '',
-    main2: 'Linsendalgemüse mit Reis', side2a: 'Reis', side2b: '', dessert: 'Apfelstrudel' },
+    main2: 'Linsendalgemüse', side2a: 'Reis', side2b: '', dessert: 'Apfelstrudel' },
   { week_nr: 3, day_of_week: 4, meal: 'abend', location: 'sued',
     soup: 'Backerbsensuppe', main1: 'Korma-Hühnerkeule', side1a: 'Erbsenreis', side1b: '',
-    main2: 'Gemüse-Couscous', side2a: '', side2b: '', dessert: 'Schokomousse' },
+    main2: 'Gebackener Emmentaler', side2a: 'Erdäpfelsalat', side2b: 'Preiselbeeren', dessert: 'Schokomousse' },
 
   // --- Freitag W3 ---
   { week_nr: 3, day_of_week: 5, meal: 'mittag', location: 'city',
-    soup: 'Minestrone', main1: 'Gemüse-Hühnercurry', side1a: 'Kräuterreis', side1b: '',
+    soup: 'Gulaschsuppe', main1: 'Gemüse-Hühnercurry', side1a: 'Kräuterreis', side1b: '',
     main2: 'Ofengemüse-Teller mit Kräuterdip', side2a: '', side2b: '', dessert: 'Buchteln mit Vanillesauce' },
   { week_nr: 3, day_of_week: 5, meal: 'abend', location: 'city',
     soup: 'Karottencremesuppe', main1: 'Fleischknödel', side1a: 'Sauerkraut', side1b: '',
@@ -489,7 +529,7 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Minestrone', main1: 'Hühner-Gemüse-Pfanne', side1a: 'Reis', side1b: '',
     main2: 'Erdäpfelgulasch', side2a: '', side2b: '', dessert: 'Buchteln mit Vanillesauce' },
   { week_nr: 3, day_of_week: 5, meal: 'abend', location: 'sued',
-    soup: 'Karottencremesuppe', main1: 'Faschierte Laibchen', side1a: 'Erdäpfelpüree', side1b: '',
+    soup: 'Karottencremesuppe', main1: 'Leberkäse', side1a: 'Erdäpfelpüree', side1b: 'Gurkensalat',
     main2: 'Germknödel', side2a: '', side2b: '', dessert: 'Pudding' },
 
   // --- Samstag W3 ---
@@ -498,9 +538,9 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Spinat-Schafkäse-Strudel', side2a: '', side2b: '', dessert: 'Marillenknödel' },
   { week_nr: 3, day_of_week: 6, meal: 'abend', location: 'city',
     soup: 'Erbsencremesuppe', main1: 'Korma-Hühnerkeule', side1a: 'Erbsenreis', side1b: '',
-    main2: 'Gemüse-Couscous', side2a: '', side2b: '', dessert: 'Grießflammeri' },
+    main2: 'Gemüse-Couscous', side2a: '', side2b: '', dessert: 'Topfenstrudel' },
   { week_nr: 3, day_of_week: 6, meal: 'mittag', location: 'sued',
-    soup: 'Zwiebelsuppe', main1: 'Tafelspitz', side1a: 'Schnittlauchsauce', side1b: 'Erdäpfelpüree',
+    soup: 'Zwiebelsuppe', main1: 'Tafelspitz', side1a: 'Apfelkren', side1b: 'Schnittlauchsauce',
     main2: 'Pasta all\'arrabbiata', side2a: 'Ofengemüse', side2b: '', dessert: 'Marillenknödel' },
   { week_nr: 3, day_of_week: 6, meal: 'abend', location: 'sued',
     soup: 'Erbsencremesuppe', main1: 'Rindsgeschnetzeltes', side1a: 'Butterspätzle', side1b: '',
@@ -511,11 +551,11 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Grießnockerlsuppe', main1: 'Puten-Rahmgeschnetzeltes', side1a: 'Kräuterreis', side1b: '',
     main2: 'Gemüselaibchen', side2a: 'Ofengemüse', side2b: '', dessert: 'Dessertvariation' },
   { week_nr: 3, day_of_week: 0, meal: 'abend', location: 'city',
-    soup: 'Tomatencremesuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelpüree', side1b: 'Preiselbeeren',
+    soup: 'Tomatencremesuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelsalat', side1b: 'Preiselbeeren',
     main2: 'Topfenknödel', side2a: 'Apfelkompott', side2b: '', dessert: 'Pudding' },
   { week_nr: 3, day_of_week: 0, meal: 'mittag', location: 'sued',
     soup: 'Grießnockerlsuppe', main1: 'Zwiebelrostbraten', side1a: 'Bratkartoffeln', side1b: 'Röstzwiebel',
-    main2: 'Krautfleckerl', side2a: '', side2b: '', dessert: 'Dessertvariation' },
+    main2: 'Krautfleckerl', side2a: 'Blattsalat', side2b: '', dessert: 'Dessertvariation' },
   { week_nr: 3, day_of_week: 0, meal: 'abend', location: 'sued',
     soup: 'Tomatencremesuppe', main1: 'Schnitzel vom Schwein', side1a: 'Pommes', side1b: 'Preiselbeeren',
     main2: 'Eiernockerl', side2a: '', side2b: '', dessert: 'Pudding' },
@@ -526,11 +566,11 @@ const ROTATION_DATA: RotationEntry[] = [
 
   // --- Montag W4 ---
   { week_nr: 4, day_of_week: 1, meal: 'mittag', location: 'city',
-    soup: 'Tomatencremesuppe', main1: 'Puten-Curry mit Reis', side1a: 'Kräuterreis', side1b: '',
+    soup: 'Tomatencremesuppe', main1: 'Puten-Curry', side1a: 'Kräuterreis', side1b: '',
     main2: 'Gemüse-Lasagne', side2a: '', side2b: '', dessert: 'Schokomousse' },
   { week_nr: 4, day_of_week: 1, meal: 'abend', location: 'city',
     soup: 'Frittatensuppe', main1: 'Hühnerfilet', side1a: 'Reis', side1b: 'Buttergemüse',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Dessertvariation' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Dessertvariation' },
   { week_nr: 4, day_of_week: 1, meal: 'mittag', location: 'sued',
     soup: 'Tomatencremesuppe', main1: 'Gemüse-Hühnercurry', side1a: 'Kräuterreis', side1b: '',
     main2: 'Käsespätzle', side2a: 'Röstzwiebel', side2b: '', dessert: 'Schokomousse' },
@@ -554,17 +594,17 @@ const ROTATION_DATA: RotationEntry[] = [
 
   // --- Mittwoch W4 ---
   { week_nr: 4, day_of_week: 3, meal: 'mittag', location: 'city',
-    soup: 'Erbsencremesuppe', main1: 'Zanderfilet auf Gemüsebett', side1a: 'Salzerdäpfel', side1b: '',
+    soup: 'Selleriecremesuppe', main1: 'Zanderfilet auf Gemüsebett', side1a: 'Salzerdäpfel', side1b: '',
     main2: 'Bolognese vegetarisch', side2a: 'Bandnudeln', side2b: '', dessert: 'Panna Cotta' },
   { week_nr: 4, day_of_week: 3, meal: 'abend', location: 'city',
-    soup: 'Gemüsesuppe', main1: 'Cevapcici', side1a: 'Reis', side1b: 'Röstzwiebel',
+    soup: 'Gemüsesuppe', main1: 'Cevapcici', side1a: 'Djuvec-Reis', side1b: 'Röstzwiebel',
     main2: 'Kaiserschmarrn', side2a: 'Apfelkompott', side2b: '', dessert: 'Grießflammeri' },
   { week_nr: 4, day_of_week: 3, meal: 'mittag', location: 'sued',
-    soup: 'Erbsencremesuppe', main1: 'Pangasiusfilet gedünstet', side1a: 'Petersilienerdäpfel', side1b: 'Buttergemüse',
+    soup: 'Selleriecremesuppe', main1: 'Pangasiusfilet gedünstet', side1a: 'Petersilienerdäpfel', side1b: 'Buttergemüse',
     main2: 'Pasta all\'arrabbiata', side2a: 'Ofengemüse', side2b: '', dessert: 'Panna Cotta' },
   { week_nr: 4, day_of_week: 3, meal: 'abend', location: 'sued',
     soup: 'Gemüsesuppe', main1: 'Paprikahendl', side1a: 'Bandnudeln', side1b: '',
-    main2: 'Kartoffelrösti', side2a: 'Ofengemüse', side2b: '', dessert: 'Grießflammeri' },
+    main2: 'Schwammerlgulasch', side2a: 'Semmelknödel', side2b: '', dessert: 'Grießflammeri' },
 
   // --- Donnerstag W4 ---
   { week_nr: 4, day_of_week: 4, meal: 'mittag', location: 'city',
@@ -572,12 +612,12 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Gemüselaibchen', side2a: 'Ofengemüse', side2b: '', dessert: 'Apfelstrudel' },
   { week_nr: 4, day_of_week: 4, meal: 'abend', location: 'city',
     soup: 'Backerbsensuppe', main1: 'Hühnergeschnetzeltes', side1a: 'Reis', side1b: 'Buttergemüse',
-    main2: 'Linsendalgemüse mit Reis', side2a: 'Reis', side2b: '', dessert: 'Mohr im Hemd' },
+    main2: 'Linsendalgemüse', side2a: 'Reis', side2b: '', dessert: 'Mohr im Hemd' },
   { week_nr: 4, day_of_week: 4, meal: 'mittag', location: 'sued',
     soup: 'Brokkolicremesuppe', main1: 'Fischstäbchen', side1a: 'Pommes', side1b: '',
     main2: 'Spinat-Schafkäse-Strudel', side2a: '', side2b: '', dessert: 'Apfelstrudel' },
   { week_nr: 4, day_of_week: 4, meal: 'abend', location: 'sued',
-    soup: 'Backerbsensuppe', main1: 'Fleischknödel', side1a: 'Sauerkraut', side1b: '',
+    soup: 'Backerbsensuppe', main1: 'Beuschel', side1a: 'Semmelknödel', side1b: '',
     main2: 'Ofengemüse-Teller mit Kräuterdip', side2a: '', side2b: '', dessert: 'Mohr im Hemd' },
 
   // --- Freitag W4 ---
@@ -588,7 +628,7 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Nudelsuppe', main1: 'Putenrollbraten', side1a: 'Gemüsereis', side1b: '',
     main2: 'Palatschinken', side2a: '', side2b: '', dessert: 'Vanilleeis mit Früchten' },
   { week_nr: 4, day_of_week: 5, meal: 'mittag', location: 'sued',
-    soup: 'Spargelcremesuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelpüree', side1b: 'Preiselbeeren',
+    soup: 'Spargelcremesuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelsalat', side1b: 'Preiselbeeren',
     main2: 'Gemüse-Couscous', side2a: '', side2b: '', dessert: 'Marillenknödel' },
   { week_nr: 4, day_of_week: 5, meal: 'abend', location: 'sued',
     soup: 'Nudelsuppe', main1: 'Hühner-Gemüse-Pfanne', side1a: 'Reis', side1b: '',
@@ -599,21 +639,21 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Klare Gemüsebrühe mit Einlage', main1: 'Schweinefilet', side1a: 'Kartoffelgratin', side1b: 'Buttergemüse',
     main2: 'Spinat-Tortellini', side2a: 'Tomatensauce', side2b: '', dessert: 'Schokokuchen' },
   { week_nr: 4, day_of_week: 6, meal: 'abend', location: 'city',
-    soup: 'Knoblauchcremesuppe', main1: 'Steirisches Wurzelfleisch', side1a: 'Salzerdäpfel', side1b: '',
+    soup: 'Knoblauchcremesuppe', main1: 'Gebackene Leber', side1a: 'Erdäpfelpüree', side1b: 'Apfelkompott',
     main2: 'Gemüse-Couscous', side2a: '', side2b: '', dessert: 'Topfencreme mit Beeren' },
   { week_nr: 4, day_of_week: 6, meal: 'mittag', location: 'sued',
-    soup: 'Klare Gemüsebrühe mit Einlage', main1: 'Tafelspitz', side1a: 'Schnittlauchsauce', side1b: 'Erdäpfelpüree',
-    main2: 'Krautfleckerl', side2a: '', side2b: '', dessert: 'Schokokuchen' },
+    soup: 'Klare Gemüsebrühe mit Einlage', main1: 'Tafelspitz', side1a: 'Apfelkren', side1b: 'Schnittlauchsauce',
+    main2: 'Krautfleckerl', side2a: 'Blattsalat', side2b: '', dessert: 'Schokokuchen' },
   { week_nr: 4, day_of_week: 6, meal: 'abend', location: 'sued',
     soup: 'Knoblauchcremesuppe', main1: 'Hühnerkeulen überbacken', side1a: 'Reis', side1b: 'Buttergemüse',
-    main2: 'Linsendalgemüse mit Reis', side2a: 'Reis', side2b: '', dessert: 'Topfencreme mit Beeren' },
+    main2: 'Linsendalgemüse', side2a: 'Reis', side2b: '', dessert: 'Linzer Torte' },
 
   // --- Sonntag W4 ---
   { week_nr: 4, day_of_week: 0, meal: 'mittag', location: 'city',
     soup: 'Rindsuppe mit Frittaten', main1: 'Schweinshaxe', side1a: 'Semmelknödel', side1b: 'Sauerkraut',
     main2: 'Käsespätzle', side2a: 'Röstzwiebel', side2b: '', dessert: 'Dessertvariation' },
   { week_nr: 4, day_of_week: 0, meal: 'abend', location: 'city',
-    soup: 'Nudelsuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelpüree', side1b: 'Preiselbeeren',
+    soup: 'Nudelsuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelsalat', side1b: 'Preiselbeeren',
     main2: 'Topfenknödel', side2a: 'Apfelkompott', side2b: '', dessert: 'Joghurt mit Früchten' },
   { week_nr: 4, day_of_week: 0, meal: 'mittag', location: 'sued',
     soup: 'Rindsuppe mit Frittaten', main1: 'Rindsroulade', side1a: 'Polenta', side1b: 'Bratensauce',
@@ -629,7 +669,7 @@ const ROTATION_DATA: RotationEntry[] = [
   // --- Montag W5 ---
   { week_nr: 5, day_of_week: 1, meal: 'mittag', location: 'city',
     soup: 'Kürbiscremesuppe', main1: 'Steirisches Wurzelfleisch', side1a: 'Salzerdäpfel', side1b: '',
-    main2: 'Linsendalgemüse mit Reis', side2a: 'Reis', side2b: '', dessert: 'Obstsalat' },
+    main2: 'Linsendalgemüse', side2a: 'Reis', side2b: '', dessert: 'Obstsalat' },
   { week_nr: 5, day_of_week: 1, meal: 'abend', location: 'city',
     soup: 'Rindsuppe mit Frittaten', main1: 'Hühnerfilet', side1a: 'Kräuterreis', side1b: 'Buttergemüse',
     main2: 'Spinat-Tortellini', side2a: 'Tomatensauce', side2b: '', dessert: 'Dessertvariation' },
@@ -638,17 +678,17 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Gemüsestrudel', side2a: 'Ofengemüse', side2b: '', dessert: 'Obstsalat' },
   { week_nr: 5, day_of_week: 1, meal: 'abend', location: 'sued',
     soup: 'Rindsuppe mit Frittaten', main1: 'Hühnerstreifen', side1a: 'Reis', side1b: 'Buttergemüse',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Dessertvariation' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Dessertvariation' },
 
   // --- Dienstag W5 ---
   { week_nr: 5, day_of_week: 2, meal: 'mittag', location: 'city',
     soup: 'Frittatensuppe', main1: 'Schweinsbraten', side1a: 'Semmelknödel', side1b: 'Sauerkraut',
     main2: 'Gemüse-Lasagne', side2a: '', side2b: '', dessert: 'Tiramisu' },
   { week_nr: 5, day_of_week: 2, meal: 'abend', location: 'city',
-    soup: 'Grießnockerlsuppe', main1: 'Rindsgulasch', side1a: 'Butterspätzle', side1b: '',
+    soup: 'Grießnockerlsuppe', main1: 'Kalbsgulasch', side1a: 'Butterspätzle', side1b: '',
     main2: 'Fruchtknödel', side2a: 'Apfelkompott', side2b: '', dessert: 'Joghurt mit Früchten' },
   { week_nr: 5, day_of_week: 2, meal: 'mittag', location: 'sued',
-    soup: 'Frittatensuppe', main1: 'Naturschnitzel vom Schwein', side1a: 'Kartoffelgratin', side1b: 'Buttergemüse',
+    soup: 'Frittatensuppe', main1: 'Jägerschnitzel', side1a: 'Butterspätzle', side1b: 'Buttergemüse',
     main2: 'Spinatlasagne', side2a: '', side2b: '', dessert: 'Tiramisu' },
   { week_nr: 5, day_of_week: 2, meal: 'abend', location: 'sued',
     soup: 'Grießnockerlsuppe', main1: 'Spaghetti Bolognese', side1a: '', side1b: '',
@@ -656,13 +696,13 @@ const ROTATION_DATA: RotationEntry[] = [
 
   // --- Mittwoch W5 ---
   { week_nr: 5, day_of_week: 3, meal: 'mittag', location: 'city',
-    soup: 'Knoblauchcremesuppe', main1: 'Lachsforelle mit Kräuterkruste', side1a: 'Petersilienerdäpfel', side1b: '',
+    soup: 'Schwammerlcremesuppe', main1: 'Lachsforelle mit Kräuterkruste', side1a: 'Petersilienerdäpfel', side1b: '',
     main2: 'Kartoffelrösti', side2a: 'Ofengemüse', side2b: '', dessert: 'Schokokuchen' },
   { week_nr: 5, day_of_week: 3, meal: 'abend', location: 'city',
     soup: 'Gemüsesuppe', main1: 'Hühner-Gemüse-Pfanne', side1a: 'Reis', side1b: '',
-    main2: 'Ofengemüse-Teller mit Kräuterdip', side2a: '', side2b: '', dessert: 'Dessertvariation' },
+    main2: 'Kürbisrisotto', side2a: 'Blattsalat', side2b: '', dessert: 'Dessertvariation' },
   { week_nr: 5, day_of_week: 3, meal: 'mittag', location: 'sued',
-    soup: 'Knoblauchcremesuppe', main1: 'Kabeljaufilet mit Senfkruste', side1a: 'Erdäpfelpüree', side1b: '',
+    soup: 'Schwammerlcremesuppe', main1: 'Saibling gebraten', side1a: 'Petersilienerdäpfel', side1b: 'Buttergemüse',
     main2: 'Erdäpfelgulasch', side2a: '', side2b: '', dessert: 'Schokokuchen' },
   { week_nr: 5, day_of_week: 3, meal: 'abend', location: 'sued',
     soup: 'Gemüsesuppe', main1: 'Geselchtes mit Sauerkraut', side1a: 'Semmelknödel', side1b: '',
@@ -671,10 +711,10 @@ const ROTATION_DATA: RotationEntry[] = [
   // --- Donnerstag W5 ---
   { week_nr: 5, day_of_week: 4, meal: 'mittag', location: 'city',
     soup: 'Zwiebelsuppe', main1: 'Seehecht gebraten', side1a: 'Petersilienerdäpfel', side1b: 'Buttergemüse',
-    main2: 'Krautfleckerl', side2a: '', side2b: '', dessert: 'Apfelstrudel' },
+    main2: 'Krautfleckerl', side2a: 'Blattsalat', side2b: '', dessert: 'Apfelstrudel' },
   { week_nr: 5, day_of_week: 4, meal: 'abend', location: 'city',
     soup: 'Leberknödelsuppe', main1: 'Hühnergeschnetzeltes', side1a: 'Reis', side1b: '',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Schokomousse' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Schokomousse' },
   { week_nr: 5, day_of_week: 4, meal: 'mittag', location: 'sued',
     soup: 'Zwiebelsuppe', main1: 'Thunfisch-Nudelpfanne', side1a: '', side1b: '',
     main2: 'Bolognese vegetarisch', side2a: 'Bandnudeln', side2b: '', dessert: 'Apfelstrudel' },
@@ -687,7 +727,7 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Klare Gemüsebrühe mit Einlage', main1: 'Pariser Schnitzel', side1a: 'Pommes', side1b: '',
     main2: 'Spinat-Schafkäse-Strudel', side2a: '', side2b: '', dessert: 'Buchteln mit Vanillesauce' },
   { week_nr: 5, day_of_week: 5, meal: 'abend', location: 'city',
-    soup: 'Kartoffelcremesuppe', main1: 'Schweinsbraten', side1a: 'Semmelknödel', side1b: 'Sauerkraut',
+    soup: 'Kartoffelcremesuppe', main1: 'Kümmelbraten', side1a: 'Semmelknödel', side1b: 'Sauerkraut',
     main2: 'Germknödel', side2a: '', side2b: '', dessert: 'Pudding' },
   { week_nr: 5, day_of_week: 5, meal: 'mittag', location: 'sued',
     soup: 'Klare Gemüsebrühe mit Einlage', main1: 'Schnitzel vom Schwein', side1a: 'Pommes', side1b: 'Preiselbeeren',
@@ -698,24 +738,24 @@ const ROTATION_DATA: RotationEntry[] = [
 
   // --- Samstag W5 ---
   { week_nr: 5, day_of_week: 6, meal: 'mittag', location: 'city',
-    soup: 'Backerbsensuppe', main1: 'Korma-Hühnerkeule', side1a: 'Erbsenreis', side1b: '',
+    soup: 'Kaspressknödelsuppe', main1: 'Korma-Hühnerkeule', side1a: 'Erbsenreis', side1b: '',
     main2: 'Gemüse-Couscous', side2a: '', side2b: '', dessert: 'Marillenknödel' },
   { week_nr: 5, day_of_week: 6, meal: 'abend', location: 'city',
     soup: 'Karottencremesuppe', main1: 'Rindsroulade', side1a: 'Polenta', side1b: 'Bratensauce',
-    main2: 'Käsespätzle', side2a: 'Röstzwiebel', side2b: '', dessert: 'Grießflammeri' },
+    main2: 'Käsespätzle', side2a: 'Röstzwiebel', side2b: '', dessert: 'Milchrahmstrudel' },
   { week_nr: 5, day_of_week: 6, meal: 'mittag', location: 'sued',
-    soup: 'Backerbsensuppe', main1: 'Putenrollbraten', side1a: 'Gemüsereis', side1b: 'Bratensauce',
+    soup: 'Kaspressknödelsuppe', main1: 'Putenrollbraten', side1a: 'Gemüsereis', side1b: 'Bratensauce',
     main2: 'Spinat-Tortellini', side2a: 'Tomatensauce', side2b: '', dessert: 'Marillenknödel' },
   { week_nr: 5, day_of_week: 6, meal: 'abend', location: 'sued',
     soup: 'Karottencremesuppe', main1: 'Schweinefilet', side1a: 'Ofenkartoffeln', side1b: 'Rahmsoße',
-    main2: 'Linsendalgemüse mit Reis', side2a: 'Reis', side2b: '', dessert: 'Grießflammeri' },
+    main2: 'Linsendalgemüse', side2a: 'Reis', side2b: '', dessert: 'Grießflammeri' },
 
   // --- Sonntag W5 ---
   { week_nr: 5, day_of_week: 0, meal: 'mittag', location: 'city',
-    soup: 'Spargelcremesuppe', main1: 'Tafelspitz', side1a: 'Schnittlauchsauce', side1b: 'Erdäpfelpüree',
+    soup: 'Spargelcremesuppe', main1: 'Tafelspitz', side1a: 'Apfelkren', side1b: 'Schnittlauchsauce',
     main2: 'Spinat-Schafkäse-Strudel', side2a: '', side2b: '', dessert: 'Mohr im Hemd' },
   { week_nr: 5, day_of_week: 0, meal: 'abend', location: 'city',
-    soup: 'Tomatencremesuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelpüree', side1b: 'Preiselbeeren',
+    soup: 'Tomatencremesuppe', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelsalat', side1b: 'Preiselbeeren',
     main2: 'Topfenknödel', side2a: 'Apfelkompott', side2b: '', dessert: 'Marillenknödel' },
   { week_nr: 5, day_of_week: 0, meal: 'mittag', location: 'sued',
     soup: 'Spargelcremesuppe', main1: 'Zwiebelrostbraten', side1a: 'Bratkartoffeln', side1b: 'Röstzwiebel',
@@ -737,7 +777,7 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Eiernockerl', side2a: '', side2b: '', dessert: 'Dessertvariation' },
   { week_nr: 6, day_of_week: 1, meal: 'mittag', location: 'sued',
     soup: 'Spargelcremesuppe', main1: 'Schweinsbraten', side1a: 'Semmelknödel', side1b: 'Sauerkraut',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Obstsalat' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Obstsalat' },
   { week_nr: 6, day_of_week: 1, meal: 'abend', location: 'sued',
     soup: 'Nudelsuppe', main1: 'Hühnergeschnetzeltes', side1a: 'Kräuterreis', side1b: '',
     main2: 'Spinat-Tortellini', side2a: 'Tomatensauce', side2b: '', dessert: 'Dessertvariation' },
@@ -748,31 +788,31 @@ const ROTATION_DATA: RotationEntry[] = [
     main2: 'Spinatlasagne', side2a: '', side2b: '', dessert: 'Tiramisu' },
   { week_nr: 6, day_of_week: 2, meal: 'abend', location: 'city',
     soup: 'Kürbiscremesuppe', main1: 'Rindsroulade', side1a: 'Polenta', side1b: 'Bratensauce',
-    main2: 'Fruchtknödel', side2a: 'Apfelkompott', side2b: '', dessert: 'Pudding' },
+    main2: 'Fruchtknödel', side2a: 'Apfelkompott', side2b: '', dessert: 'Powidltascherl' },
   { week_nr: 6, day_of_week: 2, meal: 'mittag', location: 'sued',
-    soup: 'Minestrone', main1: 'Fischfilet im Backteig', side1a: 'Pommes', side1b: '',
+    soup: 'Minestrone', main1: 'Karpfen gebacken', side1a: 'Erdäpfelsalat', side1b: '',
     main2: 'Gemüse-Lasagne', side2a: '', side2b: '', dessert: 'Tiramisu' },
   { week_nr: 6, day_of_week: 2, meal: 'abend', location: 'sued',
     soup: 'Kürbiscremesuppe', main1: 'Faschierte Laibchen', side1a: 'Erdäpfelpüree', side1b: '',
-    main2: 'Krautfleckerl', side2a: '', side2b: '', dessert: 'Pudding' },
+    main2: 'Krautfleckerl', side2a: 'Blattsalat', side2b: '', dessert: 'Pudding' },
 
   // --- Mittwoch W6 ---
   { week_nr: 6, day_of_week: 3, meal: 'mittag', location: 'city',
     soup: 'Karottencremesuppe', main1: 'Kabeljaufilet mit Senfkruste', side1a: 'Erdäpfelpüree', side1b: '',
     main2: 'Gemüselaibchen', side2a: 'Ofengemüse', side2b: '', dessert: 'Panna Cotta' },
   { week_nr: 6, day_of_week: 3, meal: 'abend', location: 'city',
-    soup: 'Kartoffelcremesuppe', main1: 'Cevapcici', side1a: 'Reis', side1b: 'Röstzwiebel',
-    main2: 'Kaiserschmarrn', side2a: 'Apfelkompott', side2b: '', dessert: 'Dessertvariation' },
+    soup: 'Kartoffelcremesuppe', main1: 'Cevapcici', side1a: 'Djuvec-Reis', side1b: 'Röstzwiebel',
+    main2: 'Kaiserschmarrn', side2a: 'Apfelkompott', side2b: '', dessert: 'Salzburger Nockerl' },
   { week_nr: 6, day_of_week: 3, meal: 'mittag', location: 'sued',
     soup: 'Karottencremesuppe', main1: 'Seehecht gebraten', side1a: 'Petersilienerdäpfel', side1b: 'Buttergemüse',
     main2: 'Bolognese vegetarisch', side2a: 'Bandnudeln', side2b: '', dessert: 'Panna Cotta' },
   { week_nr: 6, day_of_week: 3, meal: 'abend', location: 'sued',
     soup: 'Kartoffelcremesuppe', main1: 'Steirisches Wurzelfleisch', side1a: 'Salzerdäpfel', side1b: '',
-    main2: 'Ofengemüse-Teller mit Kräuterdip', side2a: '', side2b: '', dessert: 'Dessertvariation' },
+    main2: 'Tiroler Gröstl vegetarisch', side2a: 'Blattsalat', side2b: '', dessert: 'Dessertvariation' },
 
   // --- Donnerstag W6 ---
   { week_nr: 6, day_of_week: 4, meal: 'mittag', location: 'city',
-    soup: 'Leberknödelsuppe', main1: 'Naturschnitzel vom Schwein', side1a: 'Kartoffelgratin', side1b: 'Buttergemüse',
+    soup: 'Leberknödelsuppe', main1: 'Rahmschnitzel', side1a: 'Butterspätzle', side1b: 'Buttergemüse',
     main2: 'Erdäpfelgulasch', side2a: '', side2b: '', dessert: 'Apfelstrudel' },
   { week_nr: 6, day_of_week: 4, meal: 'abend', location: 'city',
     soup: 'Frittatensuppe', main1: 'Gemüse-Hühnercurry', side1a: 'Kräuterreis', side1b: '',
@@ -781,7 +821,7 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Leberknödelsuppe', main1: 'Paprikahendl', side1a: 'Bandnudeln', side1b: '',
     main2: 'Käsespätzle', side2a: 'Röstzwiebel', side2b: '', dessert: 'Apfelstrudel' },
   { week_nr: 6, day_of_week: 4, meal: 'abend', location: 'sued',
-    soup: 'Frittatensuppe', main1: 'Puten-Curry mit Reis', side1a: 'Kräuterreis', side1b: '',
+    soup: 'Frittatensuppe', main1: 'Puten-Curry', side1a: 'Kräuterreis', side1b: '',
     main2: 'Kartoffelrösti', side2a: 'Ofengemüse', side2b: '', dessert: 'Schokomousse' },
 
   // --- Freitag W6 ---
@@ -792,7 +832,7 @@ const ROTATION_DATA: RotationEntry[] = [
     soup: 'Backerbsensuppe', main1: 'Faschierte Laibchen', side1a: 'Erdäpfelpüree', side1b: '',
     main2: 'Palatschinken', side2a: '', side2b: '', dessert: 'Obstsalat' },
   { week_nr: 6, day_of_week: 5, meal: 'mittag', location: 'sued',
-    soup: 'Gemüsesuppe', main1: 'Cevapcici', side1a: 'Reis', side1b: 'Röstzwiebel',
+    soup: 'Gemüsesuppe', main1: 'Cevapcici', side1a: 'Djuvec-Reis', side1b: 'Röstzwiebel',
     main2: 'Spinat-Schafkäse-Strudel', side2a: '', side2b: '', dessert: 'Buchteln mit Vanillesauce' },
   { week_nr: 6, day_of_week: 5, meal: 'abend', location: 'sued',
     soup: 'Backerbsensuppe', main1: 'Hühnerfilet', side1a: 'Reis', side1b: 'Buttergemüse',
@@ -800,10 +840,10 @@ const ROTATION_DATA: RotationEntry[] = [
 
   // --- Samstag W6 ---
   { week_nr: 6, day_of_week: 6, meal: 'mittag', location: 'city',
-    soup: 'Brokkolicremesuppe', main1: 'Tafelspitz', side1a: 'Schnittlauchsauce', side1b: 'Erdäpfelpüree',
-    main2: 'Linsendalgemüse mit Reis', side2a: 'Reis', side2b: '', dessert: 'Reisauflauf mit Kirschen' },
+    soup: 'Brokkolicremesuppe', main1: 'Tafelspitz', side1a: 'Apfelkren', side1b: 'Schnittlauchsauce',
+    main2: 'Linsendalgemüse', side2a: 'Reis', side2b: '', dessert: 'Reisauflauf mit Kirschen' },
   { week_nr: 6, day_of_week: 6, meal: 'abend', location: 'city',
-    soup: 'Zwiebelsuppe', main1: 'Schweinshaxe', side1a: 'Semmelknödel', side1b: 'Sauerkraut',
+    soup: 'Lauchcremesuppe', main1: 'Schweinshaxe', side1a: 'Semmelknödel', side1b: 'Sauerkraut',
     main2: 'Germknödel', side2a: '', side2b: '', dessert: 'Topfencreme mit Beeren' },
   { week_nr: 6, day_of_week: 6, meal: 'mittag', location: 'sued',
     soup: 'Brokkolicremesuppe', main1: 'Schweinefilet', side1a: 'Kartoffelgratin', side1b: 'Buttergemüse',
@@ -815,9 +855,9 @@ const ROTATION_DATA: RotationEntry[] = [
   // --- Sonntag W6 ---
   { week_nr: 6, day_of_week: 0, meal: 'mittag', location: 'city',
     soup: 'Grießnockerlsuppe', main1: 'Zwiebelrostbraten', side1a: 'Bratkartoffeln', side1b: 'Röstzwiebel',
-    main2: 'Kasnudeln', side2a: '', side2b: '', dessert: 'Dessertvariation' },
+    main2: 'Kasnudeln', side2a: 'Blattsalat', side2b: '', dessert: 'Dessertvariation' },
   { week_nr: 6, day_of_week: 0, meal: 'abend', location: 'city',
-    soup: 'Rindsuppe mit Frittaten', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelpüree', side1b: 'Preiselbeeren',
+    soup: 'Rindsuppe mit Frittaten', main1: 'Wiener Schnitzel', side1a: 'Erdäpfelsalat', side1b: 'Preiselbeeren',
     main2: 'Eiernockerl', side2a: '', side2b: '', dessert: 'Joghurt mit Früchten' },
   { week_nr: 6, day_of_week: 0, meal: 'mittag', location: 'sued',
     soup: 'Grießnockerlsuppe', main1: 'Rindsgulasch', side1a: 'Butterspätzle', side1b: '',

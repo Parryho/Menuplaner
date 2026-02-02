@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import WeekGrid from '@/components/WeekGrid';
 
@@ -128,6 +128,44 @@ function WochenplanPage() {
     setWeek(kw);
   };
 
+  const handleDishChange = useCallback((dayOfWeek: number, meal: string, location: string, slotKey: string, dish: Dish | null) => {
+    // Optimistic UI update
+    setPlan(prev => {
+      if (!prev) return prev;
+      const days = prev.days.map(day => {
+        if (day.dayOfWeek !== dayOfWeek) return day;
+        const mealKey = meal as 'mittag' | 'abend';
+        const locKey = location as 'city' | 'sued';
+        return {
+          ...day,
+          [mealKey]: {
+            ...day[mealKey],
+            [locKey]: {
+              ...day[mealKey][locKey],
+              [slotKey]: dish,
+            },
+          },
+        };
+      });
+      return { ...prev, days };
+    });
+
+    // Persist to API
+    fetch('/api/plans', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        year,
+        calendarWeek: week,
+        dayOfWeek,
+        meal,
+        location,
+        slot: slotKey,
+        dishId: dish?.id || null,
+      }),
+    });
+  }, [year, week]);
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -214,7 +252,7 @@ function WochenplanPage() {
           <div className="text-primary-500 text-sm">Lade Wochenplan...</div>
         </div>
       ) : plan ? (
-        <WeekGrid days={plan.days} paxData={paxData} year={year} calendarWeek={week} dates={weekDates} />
+        <WeekGrid days={plan.days} paxData={paxData} year={year} calendarWeek={week} dates={weekDates} onDishChange={handleDishChange} />
       ) : (
         <div className="text-center py-16 bg-white rounded-card shadow-card border border-primary-100">
           <div className="text-primary-400 text-lg mb-2">Kein Plan gefunden</div>

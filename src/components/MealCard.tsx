@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import AllergenBadge from './AllergenBadge';
 
 interface Dish {
@@ -36,6 +36,115 @@ interface MealCardProps {
   location?: string;
   temperatures?: TempData;
   onTempChange?: (slot: string, core: string, serving: string) => void;
+  onDishChange?: (slotKey: string, dish: Dish | null) => void;
+}
+
+// Map slot keys to dish categories for filtering
+function getCategoriesForSlot(slotKey: string): string[] {
+  switch (slotKey) {
+    case 'soup': return ['suppe'];
+    case 'main1': case 'main2': return ['fleisch', 'fisch', 'vegetarisch'];
+    case 'side1a': case 'side1b': case 'side2a': case 'side2b': return ['beilage'];
+    case 'dessert': return ['dessert'];
+    default: return [];
+  }
+}
+
+// Dish cache per category combo to avoid refetching
+const dishCache: Record<string, Dish[]> = {};
+
+async function fetchDishesForSlot(slotKey: string): Promise<Dish[]> {
+  const categories = getCategoriesForSlot(slotKey);
+  const cacheKey = categories.join(',');
+  if (dishCache[cacheKey]) return dishCache[cacheKey];
+
+  const results = await Promise.all(
+    categories.map(cat => fetch(`/api/dishes?category=${cat}`).then(r => r.json()))
+  );
+  const dishes: Dish[] = results.flat();
+  dishes.sort((a, b) => a.name.localeCompare(b.name));
+  dishCache[cacheKey] = dishes;
+  return dishes;
+}
+
+function DishDropdown({ slotKey, currentDish, onSelect, onClose }: {
+  slotKey: string;
+  currentDish: Dish | null;
+  onSelect: (dish: Dish | null) => void;
+  onClose: () => void;
+}) {
+  const [dishes, setDishes] = useState<Dish[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetchDishesForSlot(slotKey).then(d => { setDishes(d); setLoading(false); });
+  }, [slotKey]);
+
+  useEffect(() => {
+    if (!loading && inputRef.current) inputRef.current.focus();
+  }, [loading]);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [onClose]);
+
+  const filtered = dishes.filter(d =>
+    d.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div ref={ref} className="absolute z-50 left-0 top-full mt-0.5 w-64 bg-white border border-primary-200 rounded-lg shadow-lg max-h-60 flex flex-col">
+      <div className="p-1.5 border-b border-primary-100">
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Suchen..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full text-xs border border-primary-200 rounded px-2 py-1 focus:border-accent-500 focus:ring-1 focus:ring-accent-200 outline-none"
+          onClick={e => e.stopPropagation()}
+        />
+      </div>
+      <div className="overflow-y-auto flex-1">
+        {loading ? (
+          <div className="px-2 py-3 text-xs text-primary-400 text-center">Lade...</div>
+        ) : (
+          <>
+            <button
+              onClick={(e) => { e.stopPropagation(); onSelect(null); }}
+              className={`w-full text-left px-2 py-1 text-xs hover:bg-primary-50 transition-colors ${
+                !currentDish ? 'text-accent-600 font-medium' : 'text-primary-400 italic'
+              }`}
+            >
+              — Leer —
+            </button>
+            {filtered.map(d => (
+              <button
+                key={d.id}
+                onClick={(e) => { e.stopPropagation(); onSelect(d); }}
+                className={`w-full text-left px-2 py-1 text-xs hover:bg-accent-50 transition-colors flex items-center justify-between gap-1 ${
+                  currentDish?.id === d.id ? 'bg-accent-50 text-accent-700 font-medium' : 'text-primary-800'
+                }`}
+              >
+                <span className="truncate">{d.name}</span>
+                {d.allergens && <span className="text-[9px] text-primary-400 flex-shrink-0">{d.allergens}</span>}
+              </button>
+            ))}
+            {filtered.length === 0 && !loading && (
+              <div className="px-2 py-3 text-xs text-primary-400 text-center">Keine Gerichte gefunden</div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 const ROWS: { key: keyof MealSlot; label: string; isMain: boolean }[] = [
@@ -61,9 +170,10 @@ function InlineTempInput({ value, onChange, placeholder }: { value: string; onCh
   );
 }
 
-export default function MealCard({ slot, title, pax, compact, year, calendarWeek, dayOfWeek, meal, location, temperatures = {}, onTempChange }: MealCardProps) {
+export default function MealCard({ slot, title, pax, compact, year, calendarWeek, dayOfWeek, meal, location, temperatures = {}, onTempChange, onDishChange }: MealCardProps) {
   const [temps, setTemps] = useState<TempData>(temperatures);
   const [saveTimer, setSaveTimer] = useState<Record<string, NodeJS.Timeout>>({});
+  const [editingSlot, setEditingSlot] = useState<string | null>(null);
 
   const handleTempChange = useCallback((slotKey: string, field: 'core' | 'serving', value: string) => {
     setTemps(prev => {
@@ -145,8 +255,28 @@ export default function MealCard({ slot, title, pax, compact, year, calendarWeek
                 <td className={`px-1.5 py-0.5 font-semibold ${isMainRow ? 'text-accent-700' : 'text-primary-500'}`}>
                   {row.label}
                 </td>
-                <td className={`px-1.5 py-0.5 ${isMainRow ? 'font-medium text-primary-900' : 'text-primary-700'}`}>
-                  {dish?.name || <span className="text-primary-300">-</span>}
+                <td className={`px-1.5 py-0.5 relative ${isMainRow ? 'font-medium text-primary-900' : 'text-primary-700'}`}>
+                  {onDishChange ? (
+                    <span
+                      className="cursor-pointer hover:text-accent-600 hover:underline decoration-accent-300 underline-offset-2 transition-colors"
+                      onClick={() => setEditingSlot(editingSlot === row.key ? null : row.key)}
+                    >
+                      {dish?.name || <span className="text-primary-300 italic">— leer —</span>}
+                    </span>
+                  ) : (
+                    dish?.name || <span className="text-primary-300">-</span>
+                  )}
+                  {editingSlot === row.key && onDishChange && (
+                    <DishDropdown
+                      slotKey={row.key}
+                      currentDish={dish}
+                      onSelect={(d) => {
+                        onDishChange(row.key, d);
+                        setEditingSlot(null);
+                      }}
+                      onClose={() => setEditingSlot(null)}
+                    />
+                  )}
                 </td>
                 <td className="px-1 py-0.5 text-center">
                   {dish?.allergens && <AllergenBadge codes={dish.allergens} />}

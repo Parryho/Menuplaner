@@ -40,13 +40,14 @@ interface WeekGridProps {
   year?: number;
   calendarWeek?: number;
   dates?: Record<number, string>;
+  onDishChange?: (dayOfWeek: number, meal: string, location: string, slotKey: string, dish: Dish | null) => void;
 }
 
 function paxLabel(count: number): string {
   return count > 0 ? `${count} PAX` : '-';
 }
 
-export default function WeekGrid({ days, paxData, compact, year, calendarWeek, dates }: WeekGridProps) {
+export default function WeekGrid({ days, paxData, compact, year, calendarWeek, dates, onDishChange }: WeekGridProps) {
   return (
     <div className="space-y-4">
       {[...days].sort((a, b) => ((a.dayOfWeek || 7) - (b.dayOfWeek || 7))).map((day) => {
@@ -86,6 +87,7 @@ export default function WeekGrid({ days, paxData, compact, year, calendarWeek, d
                 dayOfWeek={day.dayOfWeek}
                 meal="mittag"
                 location="city"
+                onDishChange={onDishChange && ((slotKey, dish) => onDishChange(day.dayOfWeek, 'mittag', 'city', slotKey, dish))}
               />
               <MealCard
                 slot={day.abend.city}
@@ -97,6 +99,7 @@ export default function WeekGrid({ days, paxData, compact, year, calendarWeek, d
                 dayOfWeek={day.dayOfWeek}
                 meal="abend"
                 location="city"
+                onDishChange={onDishChange && ((slotKey, dish) => onDishChange(day.dayOfWeek, 'abend', 'city', slotKey, dish))}
               />
               <MealCard
                 slot={day.mittag.sued}
@@ -108,6 +111,7 @@ export default function WeekGrid({ days, paxData, compact, year, calendarWeek, d
                 dayOfWeek={day.dayOfWeek}
                 meal="mittag"
                 location="sued"
+                onDishChange={onDishChange && ((slotKey, dish) => onDishChange(day.dayOfWeek, 'mittag', 'sued', slotKey, dish))}
               />
               <MealCard
                 slot={day.abend.sued}
@@ -119,6 +123,7 @@ export default function WeekGrid({ days, paxData, compact, year, calendarWeek, d
                 dayOfWeek={day.dayOfWeek}
                 meal="abend"
                 location="sued"
+                onDishChange={onDishChange && ((slotKey, dish) => onDishChange(day.dayOfWeek, 'abend', 'sued', slotKey, dish))}
               />
             </div>
           </div>
