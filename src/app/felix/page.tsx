@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Tesseract from 'tesseract.js';
 
 interface DayCount {
   date: string;
@@ -19,7 +20,70 @@ interface OcrResult {
   hotel: string;
   zeitraum: string;
   days: DayCount[];
-  rawJson?: string;
+  rawText?: string;
+}
+
+const DAY_ABBREVS: Record<string, string> = {
+  montag: 'Mo', dienstag: 'Di', mittwoch: 'Mi', donnerstag: 'Do',
+  freitag: 'Fr', samstag: 'Sa', sonntag: 'So',
+  mo: 'Mo', di: 'Di', mi: 'Mi', do: 'Do', fr: 'Fr', sa: 'Sa', so: 'So',
+};
+
+function parseFelixText(text: string): OcrResult {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const days: DayCount[] = [];
+
+  // Find "Ges." lines which contain totals per day
+  for (const line of lines) {
+    // Match date pattern DD.MM.YY or DD.MM.YYYY
+    const dateMatch = line.match(/(\d{1,2}\.\d{1,2}\.\d{2,4})/);
+    if (!dateMatch) continue;
+
+    // Extract all numbers from the line
+    const numbers = line.match(/\d+/g)?.map(Number) || [];
+    // Remove date digits from numbers
+    const dateParts = dateMatch[1].split('.').map(Number);
+    const cleanNumbers = numbers.filter(n => !dateParts.includes(n) || numbers.indexOf(n) > 3);
+
+    // Try to find day name
+    const lower = line.toLowerCase();
+    let dayName = '';
+    for (const [key, abbr] of Object.entries(DAY_ABBREVS)) {
+      if (lower.includes(key)) { dayName = abbr; break; }
+    }
+
+    // Check if this looks like a "Ges." (total) line
+    const isGesLine = lower.includes('ges') || lower.includes('gesamt') || lower.includes('total');
+
+    // Only process lines with dates and at least some numbers
+    if (cleanNumbers.length >= 2 || isGesLine) {
+      // Parse numbers based on typical Felix column order:
+      // Gesamt | Frühstück | KP Vorm | Mittag | KP Nach | Abend E | Abend K
+      const nums = cleanNumbers.length >= 3 ? cleanNumbers : numbers.slice(3); // skip date parts
+      const gesamt = nums[0] || 0;
+      const frueh = nums[1] || 0;
+      const kpV = nums[2] || 0;
+      const mittag = nums[3] || 0;
+      const kpN = nums[4] || 0;
+      const abendE = nums[5] || 0;
+      const abendK = nums[6] || 0;
+
+      days.push({
+        date: dateMatch[1],
+        day: dayName,
+        gesamtPax: gesamt,
+        fruehstueck: frueh,
+        kpVorm: kpV,
+        mittag,
+        kpNach: kpN,
+        abendE,
+        abendK,
+        abendGesamt: abendE + abendK,
+      });
+    }
+  }
+
+  return { hotel: '', zeitraum: '', days, rawText: text };
 }
 
 export default function FelixPage() {
@@ -31,36 +95,11 @@ export default function FelixPage() {
   const [location, setLocation] = useState('city');
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Resize image for upload (max 2000px width)
-  function resizeImage(dataUrl: string): Promise<string> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX_WIDTH = 2000;
-        const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
-        if (scale >= 1) { resolve(dataUrl); return; }
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d')!;
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.85));
-      };
-      img.src = dataUrl;
-    });
-  }
-
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = async () => {
-      const original = reader.result as string;
-      const resized = await resizeImage(original);
-      setImage(resized);
-    };
+    reader.onload = () => setImage(reader.result as string);
     reader.readAsDataURL(file);
   }
 
@@ -69,69 +108,43 @@ export default function FelixPage() {
     setProcessing(true);
     setResult(null);
     setSavedRows(new Set());
-    setOcrProgress('Sende an Gemini AI...');
+    setOcrProgress('Starte Texterkennung...');
 
     try {
-      const res = await fetch('/api/vision', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || data.error) {
-        setResult({ hotel: '', zeitraum: '', days: [], rawJson: JSON.stringify(data, null, 2) });
-        setOcrProgress('Fehler: ' + (data.error || 'Unbekannt'));
-        setProcessing(false);
-        return;
-      }
-
-      setOcrProgress('Verarbeite Ergebnis...');
-
-      // Map Gemini JSON to our DayCount format
-      const days: DayCount[] = (data.days || []).map((d: Record<string, unknown>) => {
-        const abendE = Number(d.abend_e) || 0;
-        const abendK = Number(d.abend_k) || 0;
-        return {
-          date: String(d.date || ''),
-          day: String(d.day || ''),
-          gesamtPax: Number(d.gesamt_pax) || 0,
-          fruehstueck: Number(d.fruehstueck) || 0,
-          kpVorm: Number(d.kp_vorm) || 0,
-          mittag: Number(d.mittag) || 0,
-          kpNach: Number(d.kp_nach) || 0,
-          abendE,
-          abendK,
-          abendGesamt: abendE + abendK,
-        };
+      const worker = await Tesseract.createWorker('deu', 1, {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            setOcrProgress(`Erkennung: ${Math.round((m.progress || 0) * 100)}%`);
+          }
+        },
       });
 
-      const result: OcrResult = {
-        hotel: data.hotel || '',
-        zeitraum: data.zeitraum || '',
-        days,
-        rawJson: JSON.stringify(data, null, 2),
-      };
-      setResult(result);
+      const { data } = await worker.recognize(image);
+      await worker.terminate();
 
-      // Auto-detect location from hotel name
-      if (result.hotel.toLowerCase().includes('süd') || result.hotel.toLowerCase().includes('sud')) {
+      setOcrProgress('Verarbeite Text...');
+      const parsed = parseFelixText(data.text);
+
+      // Auto-detect location
+      const lower = data.text.toLowerCase();
+      if (lower.includes('süd') || lower.includes('sud')) {
         setLocation('sued');
       } else {
         setLocation('city');
       }
+
+      setResult(parsed);
     } catch (err) {
       console.error('OCR failed:', err);
-      setResult({ hotel: '', zeitraum: '', days: [], rawJson: 'Fehler: ' + (err as Error).message });
+      setResult({ hotel: '', zeitraum: '', days: [], rawText: 'Fehler: ' + (err as Error).message });
     }
     setProcessing(false);
   }
 
   async function saveDay(day: DayCount, meal: 'mittag' | 'abend', count: number) {
-    // Convert date format DD.MM.YY to YYYY-MM-DD
     const parts = day.date.split('.');
     const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-    const isoDate = `${year}-${parts[1]}-${parts[0]}`;
+    const isoDate = `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
 
     await fetch('/api/ocr', {
       method: 'POST',
@@ -160,42 +173,44 @@ export default function FelixPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Felix Pensionsliste - Gästezahlen</h1>
-      <p className="text-gray-600 text-sm">
-        Foto der Felix-Pensionsliste hochladen. Gemini AI erkennt die Tabelle und liest alle Spalten korrekt aus.
-      </p>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold text-primary-900">Felix Pensionsliste</h1>
+        <p className="text-sm text-primary-500 mt-1">
+          Foto der Felix-Pensionsliste hochladen. Texterkennung läuft lokal im Browser (kein API-Key nötig).
+        </p>
+      </div>
 
-      <div className="bg-white rounded-lg shadow p-4 space-y-4">
+      <div className="bg-white rounded-card shadow-card border border-primary-100 p-5 space-y-4">
         {/* Location selector */}
         <div className="flex items-center gap-3">
-          <span className="font-semibold text-sm">Standort:</span>
+          <span className="text-sm font-semibold text-primary-700">Standort:</span>
           <button onClick={() => setLocation('city')}
-            className={`px-4 py-1.5 rounded font-semibold text-sm ${location === 'city' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
-            Graz City
+            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-colors ${location === 'city' ? 'bg-primary-800 text-white' : 'bg-primary-100 text-primary-600 hover:bg-primary-200'}`}>
+            City
           </button>
           <button onClick={() => setLocation('sued')}
-            className={`px-4 py-1.5 rounded font-semibold text-sm ${location === 'sued' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
+            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-colors ${location === 'sued' ? 'bg-primary-800 text-white' : 'bg-primary-100 text-primary-600 hover:bg-primary-200'}`}>
             SÜD
           </button>
         </div>
 
         {/* Upload */}
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+        <div className="border-2 border-dashed border-primary-200 rounded-lg p-8 text-center hover:border-accent-400 transition-colors">
           <input type="file" ref={fileRef} accept="image/*" onChange={handleFile} className="hidden" />
           <button onClick={() => fileRef.current?.click()}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-lg">
+            className="bg-accent-500 text-primary-900 px-6 py-3 rounded-lg hover:bg-accent-400 font-semibold transition-colors shadow-sm">
             Pensionsliste-Foto hochladen
           </button>
-          <p className="text-gray-400 text-sm mt-2">PNG, JPG — auch Kamerafotos</p>
+          <p className="text-primary-400 text-sm mt-2">PNG, JPG — auch Kamerafotos</p>
         </div>
 
         {image && (
           <div className="space-y-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt="Screenshot" className="max-h-64 rounded border" />
+            <img src={image} alt="Screenshot" className="max-h-64 rounded-lg border border-primary-200" />
             <button onClick={processOCR} disabled={processing}
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:bg-gray-400">
+              className="bg-primary-800 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 disabled:bg-primary-300 font-semibold transition-colors">
               {processing ? ocrProgress || 'Verarbeite...' : 'Pensionsliste erkennen'}
             </button>
           </div>
@@ -203,87 +218,79 @@ export default function FelixPage() {
 
         {result && (
           <div className="space-y-4">
-            {/* Detected info */}
-            {result.hotel && <div className="text-sm"><span className="font-semibold">Hotel:</span> {result.hotel}</div>}
-            {result.zeitraum && <div className="text-sm"><span className="font-semibold">Zeitraum:</span> {result.zeitraum}</div>}
-
-            {/* Extracted table */}
             {result.days.length > 0 ? (
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold">Erkannte Gästezahlen ({location === 'city' ? 'City' : 'SÜD'}):</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-bold text-primary-900">Erkannte Gästezahlen ({location === 'city' ? 'City' : 'SÜD'}):</h3>
                   <button onClick={saveAll}
-                    className="bg-green-600 text-white px-4 py-1.5 rounded text-sm hover:bg-green-700 font-semibold">
+                    className="bg-accent-500 text-primary-900 px-4 py-1.5 rounded-lg text-sm hover:bg-accent-400 font-semibold transition-colors">
                     Alle speichern
                   </button>
                 </div>
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border px-2 py-1 text-left">Datum</th>
-                      <th className="border px-2 py-1 text-left">Tag</th>
-                      <th className="border px-2 py-1 text-right">Gesamt</th>
-                      <th className="border px-2 py-1 text-right">Frühstück</th>
-                      <th className="border px-2 py-1 text-right text-gray-400">KP Vorm</th>
-                      <th className="border px-2 py-1 text-right bg-yellow-50 font-bold">Mittag</th>
-                      <th className="border px-2 py-1 text-right text-gray-400">KP Nach</th>
-                      <th className="border px-2 py-1 text-right">Abend E</th>
-                      <th className="border px-2 py-1 text-right">Abend K</th>
-                      <th className="border px-2 py-1 text-right bg-yellow-50 font-bold">Abend Ges.</th>
-                      <th className="border px-2 py-1 text-center">Aktionen</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {result.days.map((day, i) => (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="border px-2 py-1 font-medium">{day.date}</td>
-                        <td className="border px-2 py-1">{day.day}</td>
-                        <td className="border px-2 py-1 text-right text-gray-500">{day.gesamtPax}</td>
-                        <td className="border px-2 py-1 text-right text-gray-500">{day.fruehstueck}</td>
-                        <td className="border px-2 py-1 text-right text-gray-400">{day.kpVorm || '-'}</td>
-                        <td className="border px-2 py-1 text-right bg-yellow-50">
-                          <input type="number" value={day.mittag || ''} onChange={e => updateDay(i, 'mittag', parseInt(e.target.value) || 0)}
-                            className="w-14 text-right border rounded px-1 py-0.5" />
-                        </td>
-                        <td className="border px-2 py-1 text-right text-gray-400">{day.kpNach || '-'}</td>
-                        <td className="border px-2 py-1 text-right">
-                          <input type="number" value={day.abendE || ''} onChange={e => updateDay(i, 'abendE', parseInt(e.target.value) || 0)}
-                            className="w-14 text-right border rounded px-1 py-0.5" />
-                        </td>
-                        <td className="border px-2 py-1 text-right">
-                          <input type="number" value={day.abendK || ''} onChange={e => updateDay(i, 'abendK', parseInt(e.target.value) || 0)}
-                            className="w-14 text-right border rounded px-1 py-0.5" />
-                        </td>
-                        <td className="border px-2 py-1 text-right bg-yellow-50 font-semibold">{day.abendGesamt}</td>
-                        <td className="border px-2 py-1 text-center space-x-1">
-                          {day.mittag > 0 && (
-                            <button onClick={() => saveDay(day, 'mittag', day.mittag)}
-                              className={`px-2 py-0.5 rounded text-xs ${savedRows.has(`${day.date}-mittag`) ? 'bg-gray-300 text-gray-600' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
-                              {savedRows.has(`${day.date}-mittag`) ? 'M ok' : 'M'}
-                            </button>
-                          )}
-                          {day.abendGesamt > 0 && (
-                            <button onClick={() => saveDay(day, 'abend', day.abendGesamt)}
-                              className={`px-2 py-0.5 rounded text-xs ${savedRows.has(`${day.date}-abend`) ? 'bg-gray-300 text-gray-600' : 'bg-orange-600 text-white hover:bg-orange-700'}`}>
-                              {savedRows.has(`${day.date}-abend`) ? 'A ok' : 'A'}
-                            </button>
-                          )}
-                        </td>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-primary-50">
+                        <th className="border border-primary-200 px-2 py-1.5 text-left font-semibold text-primary-700">Datum</th>
+                        <th className="border border-primary-200 px-2 py-1.5 text-left font-semibold text-primary-700">Tag</th>
+                        <th className="border border-primary-200 px-2 py-1.5 text-right font-semibold text-primary-500">Gesamt</th>
+                        <th className="border border-primary-200 px-2 py-1.5 text-right font-semibold text-primary-500">Frühstück</th>
+                        <th className="border border-primary-200 px-2 py-1.5 text-right font-semibold text-primary-700 bg-accent-50">Mittag</th>
+                        <th className="border border-primary-200 px-2 py-1.5 text-right font-semibold text-primary-500">Abend E</th>
+                        <th className="border border-primary-200 px-2 py-1.5 text-right font-semibold text-primary-500">Abend K</th>
+                        <th className="border border-primary-200 px-2 py-1.5 text-right font-semibold text-primary-700 bg-accent-50">Abend Ges.</th>
+                        <th className="border border-primary-200 px-2 py-1.5 text-center font-semibold text-primary-700">Aktionen</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="text-xs text-gray-400 mt-1">M = Mittag speichern, A = Abend speichern (E+K zusammen). Zahlen sind editierbar.</p>
+                    </thead>
+                    <tbody>
+                      {result.days.map((day, i) => (
+                        <tr key={i} className="hover:bg-primary-50/50">
+                          <td className="border border-primary-100 px-2 py-1 font-medium text-primary-900">{day.date}</td>
+                          <td className="border border-primary-100 px-2 py-1 text-primary-600">{day.day}</td>
+                          <td className="border border-primary-100 px-2 py-1 text-right text-primary-400">{day.gesamtPax}</td>
+                          <td className="border border-primary-100 px-2 py-1 text-right text-primary-400">{day.fruehstueck}</td>
+                          <td className="border border-primary-100 px-2 py-1 text-right bg-accent-50/50">
+                            <input type="number" value={day.mittag || ''} onChange={e => updateDay(i, 'mittag', parseInt(e.target.value) || 0)}
+                              className="w-14 text-right border border-primary-200 rounded px-1 py-0.5 focus:border-accent-500 outline-none" />
+                          </td>
+                          <td className="border border-primary-100 px-2 py-1 text-right">
+                            <input type="number" value={day.abendE || ''} onChange={e => updateDay(i, 'abendE', parseInt(e.target.value) || 0)}
+                              className="w-14 text-right border border-primary-200 rounded px-1 py-0.5 focus:border-accent-500 outline-none" />
+                          </td>
+                          <td className="border border-primary-100 px-2 py-1 text-right">
+                            <input type="number" value={day.abendK || ''} onChange={e => updateDay(i, 'abendK', parseInt(e.target.value) || 0)}
+                              className="w-14 text-right border border-primary-200 rounded px-1 py-0.5 focus:border-accent-500 outline-none" />
+                          </td>
+                          <td className="border border-primary-100 px-2 py-1 text-right bg-accent-50/50 font-semibold text-primary-900">{day.abendGesamt}</td>
+                          <td className="border border-primary-100 px-2 py-1 text-center space-x-1">
+                            {day.mittag > 0 && (
+                              <button onClick={() => saveDay(day, 'mittag', day.mittag)}
+                                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${savedRows.has(`${day.date}-mittag`) ? 'bg-primary-200 text-primary-500' : 'bg-primary-800 text-white hover:bg-primary-700'}`}>
+                                {savedRows.has(`${day.date}-mittag`) ? 'M ok' : 'M'}
+                              </button>
+                            )}
+                            {day.abendGesamt > 0 && (
+                              <button onClick={() => saveDay(day, 'abend', day.abendGesamt)}
+                                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${savedRows.has(`${day.date}-abend`) ? 'bg-primary-200 text-primary-500' : 'bg-accent-500 text-primary-900 hover:bg-accent-400'}`}>
+                                {savedRows.has(`${day.date}-abend`) ? 'A ok' : 'A'}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-primary-400 mt-2">M = Mittag speichern, A = Abend speichern (E+K zusammen). Zahlen sind editierbar.</p>
               </div>
             ) : (
-              <div className="text-gray-500 text-sm">Keine Tageszeilen erkannt.</div>
+              <div className="text-primary-400 text-sm py-4 text-center">Keine Tageszeilen erkannt. Versuche ein schärferes Foto.</div>
             )}
 
-            {/* Debug: raw Gemini JSON */}
-            {result.rawJson && (
+            {result.rawText && (
               <details className="text-sm">
-                <summary className="cursor-pointer text-gray-500 hover:text-gray-700">Gemini-Rohdaten anzeigen</summary>
-                <pre className="bg-gray-50 p-3 rounded whitespace-pre-wrap max-h-48 overflow-auto mt-2 text-xs">{result.rawJson}</pre>
+                <summary className="cursor-pointer text-primary-400 hover:text-primary-600">Erkannter Rohtext anzeigen</summary>
+                <pre className="bg-primary-50 p-3 rounded-lg whitespace-pre-wrap max-h-48 overflow-auto mt-2 text-xs text-primary-600">{result.rawText}</pre>
               </details>
             )}
           </div>
@@ -291,8 +298,8 @@ export default function FelixPage() {
       </div>
 
       {/* Manual entry */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="font-bold mb-3">Manuelle Eingabe</h3>
+      <div className="bg-white rounded-card shadow-card border border-primary-100 p-5">
+        <h3 className="font-bold text-primary-900 mb-3">Manuelle Eingabe</h3>
         <ManualGuestCount />
       </div>
     </div>
@@ -318,18 +325,25 @@ function ManualGuestCount() {
 
   return (
     <div className="flex items-center gap-3 flex-wrap">
-      <input type="date" value={date} onChange={e => setDate(e.target.value)} className="border rounded px-2 py-1 text-sm" />
-      <select value={location} onChange={e => setLocation(e.target.value)} className="border rounded px-2 py-1 text-sm">
+      <input type="date" value={date} onChange={e => setDate(e.target.value)}
+        className="border border-primary-200 rounded-lg px-3 py-2 text-sm focus:border-accent-500 outline-none" />
+      <select value={location} onChange={e => setLocation(e.target.value)}
+        className="border border-primary-200 rounded-lg px-3 py-2 text-sm focus:border-accent-500 outline-none">
         <option value="city">City</option>
         <option value="sued">SÜD</option>
       </select>
-      <select value={meal} onChange={e => setMeal(e.target.value)} className="border rounded px-2 py-1 text-sm">
+      <select value={meal} onChange={e => setMeal(e.target.value)}
+        className="border border-primary-200 rounded-lg px-3 py-2 text-sm focus:border-accent-500 outline-none">
         <option value="mittag">Mittag</option>
         <option value="abend">Abend</option>
       </select>
-      <input type="number" placeholder="Gäste" value={count || ''} onChange={e => setCount(parseInt(e.target.value) || 0)} className="border rounded px-2 py-1 text-sm w-20" />
-      <button onClick={save} className="bg-blue-600 text-white px-4 py-1 rounded text-sm hover:bg-blue-700">Speichern</button>
-      {saved && <span className="text-green-600 text-sm">Gespeichert!</span>}
+      <input type="number" placeholder="Gäste" value={count || ''} onChange={e => setCount(parseInt(e.target.value) || 0)}
+        className="border border-primary-200 rounded-lg px-3 py-2 text-sm w-20 focus:border-accent-500 outline-none" />
+      <button onClick={save}
+        className="bg-primary-800 text-white px-4 py-2 rounded-lg text-sm hover:bg-primary-700 font-semibold transition-colors">
+        Speichern
+      </button>
+      {saved && <span className="text-accent-600 text-sm font-medium">Gespeichert!</span>}
     </div>
   );
 }

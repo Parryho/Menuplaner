@@ -21,6 +21,18 @@ const CATEGORIES = [
   { value: 'dessert', label: 'Desserts', icon: '🍰' },
 ];
 
+interface ImportResult {
+  name: string;
+  ingredients: string[];
+  allergens: string;
+  category: string;
+  instructions: string;
+  prepTime: number;
+  imageUrl: string;
+  existingDishId: number | null;
+  source: string;
+}
+
 export default function GerichtePage() {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [filter, setFilter] = useState('');
@@ -29,6 +41,11 @@ export default function GerichtePage() {
   const [editDish, setEditDish] = useState<Dish | null>(null);
   const [form, setForm] = useState({ name: '', category: 'suppe', allergens: '', season: 'all' });
   const [recipeDish, setRecipeDish] = useState<{ id: number; name: string } | null>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importError, setImportError] = useState('');
 
   useEffect(() => {
     loadDishes();
@@ -55,6 +72,48 @@ export default function GerichtePage() {
     fetch(`/api/dishes?id=${id}`, { method: 'DELETE' }).then(() => loadDishes());
   }
 
+  async function handleImport() {
+    if (!importUrl.trim()) return;
+    setImporting(true);
+    setImportError('');
+    setImportResult(null);
+    try {
+      const res = await fetch('/api/recipe-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: importUrl.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Import fehlgeschlagen');
+      setImportResult(data);
+    } catch (err) {
+      setImportError((err as Error).message);
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  async function saveImportedDish() {
+    if (!importResult) return;
+    const body = {
+      name: importResult.name,
+      category: importResult.category,
+      allergens: importResult.allergens,
+      season: 'all',
+    };
+    const res = await fetch('/api/dishes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      loadDishes();
+      setImportResult(null);
+      setImportUrl('');
+      setShowImport(false);
+    }
+  }
+
   function startEdit(dish: Dish) {
     setEditDish(dish);
     setForm({ name: dish.name, category: dish.category, allergens: dish.allergens, season: dish.season });
@@ -77,13 +136,21 @@ export default function GerichtePage() {
           <h1 className="text-2xl font-bold text-primary-900">Gerichte</h1>
           <p className="text-sm text-primary-500 mt-1">{dishes.length} Gerichte in der Datenbank</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setEditDish(null); setForm({ name: '', category: 'suppe', allergens: '', season: 'all' }); }}
-          className="flex items-center gap-2 bg-accent-500 text-primary-900 px-5 py-2.5 rounded-lg hover:bg-accent-400 font-semibold transition-colors shadow-sm"
-        >
-          <span className="text-lg">+</span>
-          Neues Gericht
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setShowImport(!showImport); setImportResult(null); setImportError(''); }}
+            className="flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2.5 rounded-lg hover:bg-primary-200 font-semibold transition-colors"
+          >
+            URL Import
+          </button>
+          <button
+            onClick={() => { setShowForm(true); setEditDish(null); setForm({ name: '', category: 'suppe', allergens: '', season: 'all' }); }}
+            className="flex items-center gap-2 bg-accent-500 text-primary-900 px-5 py-2.5 rounded-lg hover:bg-accent-400 font-semibold transition-colors shadow-sm"
+          >
+            <span className="text-lg">+</span>
+            Neues Gericht
+          </button>
+        </div>
       </div>
 
       {/* Category Stats */}
@@ -108,6 +175,76 @@ export default function GerichtePage() {
           </button>
         ))}
       </div>
+
+      {/* URL Import */}
+      {showImport && (
+        <div className="bg-white rounded-card shadow-card border border-primary-100 p-5 space-y-4">
+          <h3 className="font-bold text-primary-900 text-lg">Rezept von URL importieren</h3>
+          <div className="flex gap-3">
+            <input
+              type="url"
+              placeholder="https://www.chefkoch.de/rezepte/..."
+              value={importUrl}
+              onChange={e => setImportUrl(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleImport()}
+              className="flex-1 border border-primary-200 rounded-lg px-4 py-2.5 focus:border-accent-500 focus:ring-2 focus:ring-accent-100 outline-none transition-colors"
+            />
+            <button
+              onClick={handleImport}
+              disabled={importing || !importUrl.trim()}
+              className="bg-accent-500 text-primary-900 px-6 py-2.5 rounded-lg hover:bg-accent-400 font-semibold transition-colors shadow-sm disabled:opacity-50"
+            >
+              {importing ? 'Importiere...' : 'Importieren'}
+            </button>
+          </div>
+          <p className="text-xs text-primary-400">Unterstützt Rezept-Websites mit strukturierten Daten (Chefkoch, Gutekueche, etc.)</p>
+          {importError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">{importError}</div>
+          )}
+          {importResult && (
+            <div className="border border-primary-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-start gap-4">
+                {importResult.imageUrl && (
+                  <img src={importResult.imageUrl} alt="" className="w-24 h-24 object-cover rounded-lg flex-shrink-0" />
+                )}
+                <div className="flex-1 space-y-2">
+                  <div className="font-bold text-primary-900 text-lg">{importResult.name}</div>
+                  <div className="flex gap-2 flex-wrap">
+                    <span className="text-xs px-2 py-0.5 bg-primary-100 rounded capitalize">{importResult.category}</span>
+                    {importResult.allergens && <span className="text-xs px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-mono">{importResult.allergens}</span>}
+                    {importResult.prepTime > 0 && <span className="text-xs px-2 py-0.5 bg-primary-50 rounded">{importResult.prepTime} Min.</span>}
+                  </div>
+                  {importResult.ingredients.length > 0 && (
+                    <div className="text-xs text-primary-600">
+                      <span className="font-medium">{importResult.ingredients.length} Zutaten:</span>{' '}
+                      {importResult.ingredients.slice(0, 8).join(', ')}
+                      {importResult.ingredients.length > 8 && '...'}
+                    </div>
+                  )}
+                  {importResult.existingDishId && (
+                    <div className="text-xs text-amber-600 font-medium">Gericht existiert bereits in der Datenbank</div>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={saveImportedDish}
+                  disabled={!!importResult.existingDishId}
+                  className="bg-accent-500 text-primary-900 px-5 py-2 rounded-lg hover:bg-accent-400 font-semibold transition-colors text-sm disabled:opacity-50"
+                >
+                  Als Gericht speichern
+                </button>
+                <button
+                  onClick={() => setImportResult(null)}
+                  className="bg-primary-100 text-primary-700 px-5 py-2 rounded-lg hover:bg-primary-200 font-medium transition-colors text-sm"
+                >
+                  Verwerfen
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Form */}
       {showForm && (
