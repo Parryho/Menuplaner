@@ -29,13 +29,14 @@ const SLOT_NAMES = ['soup', 'main1', 'side1a', 'side1b', 'main2', 'side2a', 'sid
 const DEFAULT_PAX: Record<string, number> = { city: 60, sued: 45 };
 
 export async function GET(request: NextRequest) {
-  ensureDb();
-  const db = getDb();
-  const { searchParams } = new URL(request.url);
-  const dishId = searchParams.get('dishId');
+  try {
+    ensureDb();
+    const db = getDb();
+    const { searchParams } = new URL(request.url);
+    const dishId = searchParams.get('dishId');
 
-  // Single dish cost calculation
-  if (dishId) {
+    // Single dish cost calculation
+    if (dishId) {
     const items = db.prepare(`
       SELECT ri.quantity, ri.unit, i.name, i.price_per_unit, i.price_unit
       FROM recipe_items ri
@@ -96,13 +97,14 @@ export async function GET(request: NextRequest) {
   const dishNames: Record<number, string> = {};
 
   if (allDishIds.size > 0) {
-    const ids = [...allDishIds].join(',');
+    const ids = [...allDishIds];
+    const placeholders = ids.map(() => '?').join(',');
     const rows = db.prepare(`
       SELECT ri.dish_id, ri.quantity, ri.unit, i.price_per_unit, i.price_unit
       FROM recipe_items ri
       JOIN ingredients i ON ri.ingredient_id = i.id
-      WHERE ri.dish_id IN (${ids})
-    `).all() as Array<{
+      WHERE ri.dish_id IN (${placeholders})
+    `).all(...ids) as Array<{
       dish_id: number; quantity: number; unit: string; price_per_unit: number; price_unit: string;
     }>;
 
@@ -111,7 +113,7 @@ export async function GET(request: NextRequest) {
       dishCosts[r.dish_id] = (dishCosts[r.dish_id] || 0) + cost;
     }
 
-    const nameRows = db.prepare(`SELECT id, name FROM dishes WHERE id IN (${ids})`).all() as Array<{ id: number; name: string }>;
+    const nameRows = db.prepare(`SELECT id, name FROM dishes WHERE id IN (${placeholders})`).all(...ids) as Array<{ id: number; name: string }>;
     for (const n of nameRows) dishNames[n.id] = n.name;
   }
 
@@ -204,4 +206,11 @@ export async function GET(request: NextRequest) {
     },
     days,
   });
+  } catch (err) {
+    console.error('GET /api/kosten error:', err);
+    return NextResponse.json(
+      { error: 'Interner Serverfehler' },
+      { status: 500 }
+    );
+  }
 }

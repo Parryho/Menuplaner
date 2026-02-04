@@ -2,143 +2,146 @@
 
 import { useState, useRef } from 'react';
 import Tesseract from 'tesseract.js';
+import { preprocessImage } from '@/lib/image-preprocess';
+import {
+  parseFelixText,
+  confidenceLevel,
+  CONFIDENCE_DOT,
+  type DayCount,
+  type FelixResult,
+} from '@/lib/felix-parser';
 
-interface DayCount {
-  date: string;
-  day: string;
-  gesamtPax: number;
-  fruehstueck: number;
-  kpVorm: number;
-  mittag: number;
-  kpNach: number;
-  abendE: number;
-  abendK: number;
-  abendGesamt: number;
-}
+type ProcessingStep = 'idle' | 'optimizing' | 'ocr' | 'ocr-retry' | 'parsing' | 'pdf' | 'done';
 
-interface OcrResult {
-  hotel: string;
-  zeitraum: string;
-  days: DayCount[];
-  rawText?: string;
-}
-
-const DAY_ABBREVS: Record<string, string> = {
-  montag: 'Mo', dienstag: 'Di', mittwoch: 'Mi', donnerstag: 'Do',
-  freitag: 'Fr', samstag: 'Sa', sonntag: 'So',
-  mo: 'Mo', di: 'Di', mi: 'Mi', do: 'Do', fr: 'Fr', sa: 'Sa', so: 'So',
+const STEP_LABELS: Record<ProcessingStep, string> = {
+  idle: '',
+  optimizing: 'Bild wird optimiert...',
+  ocr: 'Texterkennung...',
+  'ocr-retry': 'Zweiter Durchlauf (anderer Modus)...',
+  parsing: 'Verarbeite Text...',
+  pdf: 'PDF wird ausgelesen...',
+  done: 'Fertig',
 };
 
-function parseFelixText(text: string): OcrResult {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  const days: DayCount[] = [];
-
-  // Find "Ges." lines which contain totals per day
-  for (const line of lines) {
-    // Match date pattern DD.MM.YY or DD.MM.YYYY
-    const dateMatch = line.match(/(\d{1,2}\.\d{1,2}\.\d{2,4})/);
-    if (!dateMatch) continue;
-
-    // Extract all numbers from the line
-    const numbers = line.match(/\d+/g)?.map(Number) || [];
-    // Remove date digits from numbers
-    const dateParts = dateMatch[1].split('.').map(Number);
-    const cleanNumbers = numbers.filter(n => !dateParts.includes(n) || numbers.indexOf(n) > 3);
-
-    // Try to find day name
-    const lower = line.toLowerCase();
-    let dayName = '';
-    for (const [key, abbr] of Object.entries(DAY_ABBREVS)) {
-      if (lower.includes(key)) { dayName = abbr; break; }
-    }
-
-    // Check if this looks like a "Ges." (total) line
-    const isGesLine = lower.includes('ges') || lower.includes('gesamt') || lower.includes('total');
-
-    // Only process lines with dates and at least some numbers
-    if (cleanNumbers.length >= 2 || isGesLine) {
-      // Parse numbers based on typical Felix column order:
-      // Gesamt | Frühstück | KP Vorm | Mittag | KP Nach | Abend E | Abend K
-      const nums = cleanNumbers.length >= 3 ? cleanNumbers : numbers.slice(3); // skip date parts
-      const gesamt = nums[0] || 0;
-      const frueh = nums[1] || 0;
-      const kpV = nums[2] || 0;
-      const mittag = nums[3] || 0;
-      const kpN = nums[4] || 0;
-      const abendE = nums[5] || 0;
-      const abendK = nums[6] || 0;
-
-      days.push({
-        date: dateMatch[1],
-        day: dayName,
-        gesamtPax: gesamt,
-        fruehstueck: frueh,
-        kpVorm: kpV,
-        mittag,
-        kpNach: kpN,
-        abendE,
-        abendK,
-        abendGesamt: abendE + abendK,
-      });
-    }
-  }
-
-  return { hotel: '', zeitraum: '', days, rawText: text };
-}
-
 export default function FelixPage() {
-  const [image, setImage] = useState<string | null>(null);
+  const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [ocrProgress, setOcrProgress] = useState('');
-  const [result, setResult] = useState<OcrResult | null>(null);
+  const [step, setStep] = useState<ProcessingStep>('idle');
+  const [ocrPercent, setOcrPercent] = useState(0);
+  const [result, setResult] = useState<FelixResult | null>(null);
   const [savedRows, setSavedRows] = useState<Set<string>>(new Set());
   const [location, setLocation] = useState('city');
+  const [isPdf, setIsPdf] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    setResult(null);
+    setSavedRows(new Set());
+    setProcessedImage(null);
+
+    if (file.type === 'application/pdf') {
+      setIsPdf(true);
+      setOriginalImage(null);
+      await processPdf(file);
+      return;
+    }
+
+    setIsPdf(false);
     const reader = new FileReader();
-    reader.onload = () => setImage(reader.result as string);
+    reader.onload = () => setOriginalImage(reader.result as string);
     reader.readAsDataURL(file);
   }
 
+  async function processPdf(file: File) {
+    setProcessing(true);
+    setStep('pdf');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/pdf-extract', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'PDF-Extraktion fehlgeschlagen');
+      }
+
+      setStep('parsing');
+      const parsed = parseFelixText(data.text);
+      if (parsed.hotel) setLocation(parsed.hotel);
+      setResult(parsed);
+      setStep('done');
+    } catch (err) {
+      console.error('PDF failed:', err);
+      setResult({ hotel: '', zeitraum: '', days: [], rawText: 'Fehler: ' + (err as Error).message });
+    }
+    setProcessing(false);
+  }
+
   async function processOCR() {
-    if (!image) return;
+    if (!originalImage) return;
     setProcessing(true);
     setResult(null);
     setSavedRows(new Set());
-    setOcrProgress('Starte Texterkennung...');
 
     try {
-      const worker = await Tesseract.createWorker('deu', 1, {
-        logger: (m) => {
-          if (m.status === 'recognizing text') {
-            setOcrProgress(`Erkennung: ${Math.round((m.progress || 0) * 100)}%`);
-          }
-        },
-      });
+      // Step 1: Preprocess image
+      setStep('optimizing');
+      const optimized = await preprocessImage(originalImage);
+      setProcessedImage(optimized);
 
-      const { data } = await worker.recognize(image);
-      await worker.terminate();
+      // Step 2: OCR with improved config
+      setStep('ocr');
+      setOcrPercent(0);
+      const text = await runTesseract(optimized, 6);
 
-      setOcrProgress('Verarbeite Text...');
-      const parsed = parseFelixText(data.text);
+      // Step 3: Parse
+      setStep('parsing');
+      let parsed = parseFelixText(text);
 
-      // Auto-detect location
-      const lower = data.text.toLowerCase();
-      if (lower.includes('süd') || lower.includes('sud')) {
-        setLocation('sued');
-      } else {
-        setLocation('city');
+      // Step 4: If poor results, retry with different PSM
+      if (parsed.days.length < 3) {
+        setStep('ocr-retry');
+        setOcrPercent(0);
+        const text2 = await runTesseract(optimized, 4);
+        const parsed2 = parseFelixText(text2);
+        if (parsed2.days.length > parsed.days.length) {
+          parsed = parsed2;
+        }
       }
 
+      if (parsed.hotel) setLocation(parsed.hotel);
       setResult(parsed);
+      setStep('done');
     } catch (err) {
       console.error('OCR failed:', err);
       setResult({ hotel: '', zeitraum: '', days: [], rawText: 'Fehler: ' + (err as Error).message });
     }
     setProcessing(false);
+  }
+
+  async function runTesseract(imageData: string, psm: number): Promise<string> {
+    const worker = await Tesseract.createWorker('deu', 1, {
+      logger: (m) => {
+        if (m.status === 'recognizing text') {
+          setOcrPercent(Math.round((m.progress || 0) * 100));
+        }
+      },
+    });
+
+    await worker.setParameters({
+      tessedit_pageseg_mode: String(psm) as Tesseract.PSM,
+      tessedit_char_whitelist: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÄÖÜäöüß.,/-| ',
+      preserve_interword_spaces: '1',
+    });
+
+    const { data } = await worker.recognize(imageData);
+    await worker.terminate();
+    return data.text;
   }
 
   async function saveDay(day: DayCount, meal: 'mittag' | 'abend', count: number) {
@@ -172,12 +175,16 @@ export default function FelixPage() {
     setResult({ ...result, days: updated });
   }
 
+  const stepLabel = step === 'ocr' || step === 'ocr-retry'
+    ? `${STEP_LABELS[step]} ${ocrPercent}%`
+    : STEP_LABELS[step];
+
   return (
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-bold text-primary-900">Felix Pensionsliste</h1>
         <p className="text-sm text-primary-500 mt-1">
-          Foto der Felix-Pensionsliste hochladen. Texterkennung läuft lokal im Browser (kein API-Key nötig).
+          Foto oder PDF der Felix-Pensionsliste hochladen. Texterkennung läuft lokal im Browser (kein API-Key nötig).
         </p>
       </div>
 
@@ -197,31 +204,63 @@ export default function FelixPage() {
 
         {/* Upload */}
         <div className="border-2 border-dashed border-primary-200 rounded-lg p-8 text-center hover:border-accent-400 transition-colors">
-          <input type="file" ref={fileRef} accept="image/*" onChange={handleFile} className="hidden" />
+          <input type="file" ref={fileRef} accept="image/*,.pdf" onChange={handleFile} className="hidden" />
           <button onClick={() => fileRef.current?.click()}
             className="bg-accent-500 text-primary-900 px-6 py-3 rounded-lg hover:bg-accent-400 font-semibold transition-colors shadow-sm">
-            Pensionsliste-Foto hochladen
+            Pensionsliste hochladen
           </button>
-          <p className="text-primary-400 text-sm mt-2">PNG, JPG — auch Kamerafotos</p>
+          <p className="text-primary-400 text-sm mt-2">PNG, JPG, PDF — auch Kamerafotos</p>
         </div>
 
-        {image && (
-          <div className="space-y-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt="Screenshot" className="max-h-64 rounded-lg border border-primary-200" />
-            <button onClick={processOCR} disabled={processing}
-              className="bg-primary-800 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 disabled:bg-primary-300 font-semibold transition-colors">
-              {processing ? ocrProgress || 'Verarbeite...' : 'Pensionsliste erkennen'}
-            </button>
+        {/* Progress indicator */}
+        {processing && (
+          <div className="flex items-center gap-3 px-3 py-2 bg-primary-50 rounded-lg">
+            <div className="h-4 w-4 border-2 border-primary-300 border-t-primary-700 rounded-full animate-spin" />
+            <span className="text-sm font-medium text-primary-700">{stepLabel}</span>
+            {(step === 'ocr' || step === 'ocr-retry') && (
+              <div className="flex-1 max-w-xs bg-primary-200 rounded-full h-2">
+                <div className="bg-primary-700 h-2 rounded-full transition-all" style={{ width: `${ocrPercent}%` }} />
+              </div>
+            )}
           </div>
         )}
 
+        {/* Image preview: Original + Processed side by side */}
+        {originalImage && !isPdf && (
+          <div className="space-y-3">
+            <div className="flex gap-4 flex-wrap">
+              <div className="flex-1 min-w-[200px]">
+                <p className="text-xs text-primary-400 mb-1 font-medium">Original</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={originalImage} alt="Original" className="max-h-56 rounded-lg border border-primary-200" />
+              </div>
+              {processedImage && (
+                <div className="flex-1 min-w-[200px]">
+                  <p className="text-xs text-primary-400 mb-1 font-medium">Optimiert (Tesseract-Input)</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={processedImage} alt="Processed" className="max-h-56 rounded-lg border border-primary-200" />
+                </div>
+              )}
+            </div>
+            {!processing && (
+              <button onClick={processOCR}
+                className="bg-primary-800 text-white px-6 py-2.5 rounded-lg hover:bg-primary-700 font-semibold transition-colors">
+                Pensionsliste erkennen
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Results */}
         {result && (
           <div className="space-y-4">
             {result.days.length > 0 ? (
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-bold text-primary-900">Erkannte Gästezahlen ({location === 'city' ? 'City' : 'SÜD'}):</h3>
+                  <h3 className="font-bold text-primary-900">
+                    Erkannte Gästezahlen ({location === 'city' ? 'City' : 'SÜD'})
+                    {isPdf && <span className="ml-2 text-xs font-normal text-primary-400">(aus PDF extrahiert)</span>}
+                  </h3>
                   <button onClick={saveAll}
                     className="bg-accent-500 text-primary-900 px-4 py-1.5 rounded-lg text-sm hover:bg-accent-400 font-semibold transition-colors">
                     Alle speichern
@@ -231,6 +270,7 @@ export default function FelixPage() {
                   <table className="w-full text-sm border-collapse">
                     <thead>
                       <tr className="bg-primary-50">
+                        <th className="border border-primary-200 px-2 py-1.5 text-center font-semibold text-primary-500 w-8" title="Konfidenz"></th>
                         <th className="border border-primary-200 px-2 py-1.5 text-left font-semibold text-primary-700">Datum</th>
                         <th className="border border-primary-200 px-2 py-1.5 text-left font-semibold text-primary-700">Tag</th>
                         <th className="border border-primary-200 px-2 py-1.5 text-right font-semibold text-primary-500">Gesamt</th>
@@ -243,48 +283,64 @@ export default function FelixPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {result.days.map((day, i) => (
-                        <tr key={i} className="hover:bg-primary-50/50">
-                          <td className="border border-primary-100 px-2 py-1 font-medium text-primary-900">{day.date}</td>
-                          <td className="border border-primary-100 px-2 py-1 text-primary-600">{day.day}</td>
-                          <td className="border border-primary-100 px-2 py-1 text-right text-primary-400">{day.gesamtPax}</td>
-                          <td className="border border-primary-100 px-2 py-1 text-right text-primary-400">{day.fruehstueck}</td>
-                          <td className="border border-primary-100 px-2 py-1 text-right bg-accent-50/50">
-                            <input type="number" value={day.mittag || ''} onChange={e => updateDay(i, 'mittag', parseInt(e.target.value) || 0)}
-                              className="w-14 text-right border border-primary-200 rounded px-1 py-0.5 focus:border-accent-500 outline-none" />
-                          </td>
-                          <td className="border border-primary-100 px-2 py-1 text-right">
-                            <input type="number" value={day.abendE || ''} onChange={e => updateDay(i, 'abendE', parseInt(e.target.value) || 0)}
-                              className="w-14 text-right border border-primary-200 rounded px-1 py-0.5 focus:border-accent-500 outline-none" />
-                          </td>
-                          <td className="border border-primary-100 px-2 py-1 text-right">
-                            <input type="number" value={day.abendK || ''} onChange={e => updateDay(i, 'abendK', parseInt(e.target.value) || 0)}
-                              className="w-14 text-right border border-primary-200 rounded px-1 py-0.5 focus:border-accent-500 outline-none" />
-                          </td>
-                          <td className="border border-primary-100 px-2 py-1 text-right bg-accent-50/50 font-semibold text-primary-900">{day.abendGesamt}</td>
-                          <td className="border border-primary-100 px-2 py-1 text-center space-x-1">
-                            {day.mittag > 0 && (
-                              <button onClick={() => saveDay(day, 'mittag', day.mittag)}
-                                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${savedRows.has(`${day.date}-mittag`) ? 'bg-primary-200 text-primary-500' : 'bg-primary-800 text-white hover:bg-primary-700'}`}>
-                                {savedRows.has(`${day.date}-mittag`) ? 'M ok' : 'M'}
-                              </button>
-                            )}
-                            {day.abendGesamt > 0 && (
-                              <button onClick={() => saveDay(day, 'abend', day.abendGesamt)}
-                                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${savedRows.has(`${day.date}-abend`) ? 'bg-primary-200 text-primary-500' : 'bg-accent-500 text-primary-900 hover:bg-accent-400'}`}>
-                                {savedRows.has(`${day.date}-abend`) ? 'A ok' : 'A'}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                      {result.days.map((day, i) => {
+                        const level = confidenceLevel(day.confidence);
+                        return (
+                          <tr key={i} className="hover:bg-primary-50/50">
+                            <td className="border border-primary-100 px-2 py-1 text-center">
+                              <span
+                                className={`inline-block w-2.5 h-2.5 rounded-full ${CONFIDENCE_DOT[level]}`}
+                                title={`Konfidenz: ${Math.round(day.confidence * 100)}%`}
+                              />
+                            </td>
+                            <td className="border border-primary-100 px-2 py-1 font-medium text-primary-900">{day.date}</td>
+                            <td className="border border-primary-100 px-2 py-1 text-primary-600">{day.day}</td>
+                            <td className="border border-primary-100 px-2 py-1 text-right text-primary-400">{day.gesamtPax}</td>
+                            <td className="border border-primary-100 px-2 py-1 text-right text-primary-400">{day.fruehstueck}</td>
+                            <td className="border border-primary-100 px-2 py-1 text-right bg-accent-50/50">
+                              <input type="number" value={day.mittag || ''} onChange={e => updateDay(i, 'mittag', parseInt(e.target.value) || 0)}
+                                className="w-14 text-right border border-primary-200 rounded px-1 py-0.5 focus:border-accent-500 outline-none" />
+                            </td>
+                            <td className="border border-primary-100 px-2 py-1 text-right">
+                              <input type="number" value={day.abendE || ''} onChange={e => updateDay(i, 'abendE', parseInt(e.target.value) || 0)}
+                                className="w-14 text-right border border-primary-200 rounded px-1 py-0.5 focus:border-accent-500 outline-none" />
+                            </td>
+                            <td className="border border-primary-100 px-2 py-1 text-right">
+                              <input type="number" value={day.abendK || ''} onChange={e => updateDay(i, 'abendK', parseInt(e.target.value) || 0)}
+                                className="w-14 text-right border border-primary-200 rounded px-1 py-0.5 focus:border-accent-500 outline-none" />
+                            </td>
+                            <td className="border border-primary-100 px-2 py-1 text-right bg-accent-50/50 font-semibold text-primary-900">{day.abendGesamt}</td>
+                            <td className="border border-primary-100 px-2 py-1 text-center space-x-1">
+                              {day.mittag > 0 && (
+                                <button onClick={() => saveDay(day, 'mittag', day.mittag)}
+                                  className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${savedRows.has(`${day.date}-mittag`) ? 'bg-primary-200 text-primary-500' : 'bg-primary-800 text-white hover:bg-primary-700'}`}>
+                                  {savedRows.has(`${day.date}-mittag`) ? 'M ok' : 'M'}
+                                </button>
+                              )}
+                              {day.abendGesamt > 0 && (
+                                <button onClick={() => saveDay(day, 'abend', day.abendGesamt)}
+                                  className={`px-2 py-0.5 rounded text-xs font-medium transition-colors ${savedRows.has(`${day.date}-abend`) ? 'bg-primary-200 text-primary-500' : 'bg-accent-500 text-primary-900 hover:bg-accent-400'}`}>
+                                  {savedRows.has(`${day.date}-abend`) ? 'A ok' : 'A'}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
-                <p className="text-xs text-primary-400 mt-2">M = Mittag speichern, A = Abend speichern (E+K zusammen). Zahlen sind editierbar.</p>
+                <div className="flex items-center gap-4 mt-2 text-xs text-primary-400">
+                  <span>M = Mittag speichern, A = Abend speichern (E+K zusammen). Zahlen sind editierbar.</span>
+                  <span className="flex items-center gap-1.5 ml-auto">
+                    <span className={`inline-block w-2 h-2 rounded-full ${CONFIDENCE_DOT.high}`} /> Sicher
+                    <span className={`inline-block w-2 h-2 rounded-full ${CONFIDENCE_DOT.medium} ml-2`} /> Prüfen
+                    <span className={`inline-block w-2 h-2 rounded-full ${CONFIDENCE_DOT.low} ml-2`} /> Unsicher
+                  </span>
+                </div>
               </div>
             ) : (
-              <div className="text-primary-400 text-sm py-4 text-center">Keine Tageszeilen erkannt. Versuche ein schärferes Foto.</div>
+              <div className="text-primary-400 text-sm py-4 text-center">Keine Tageszeilen erkannt. Versuche ein schärferes Foto oder ein PDF.</div>
             )}
 
             {result.rawText && (

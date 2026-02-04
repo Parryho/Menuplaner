@@ -2,7 +2,7 @@
 const nextConfig = {
   output: 'standalone',
   experimental: {
-    serverComponentsExternalPackages: ['better-sqlite3'],
+    serverComponentsExternalPackages: ['better-sqlite3', 'pdf-parse', 'pdfjs-dist'],
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {

@@ -56,32 +56,40 @@ function getDishForSlot(slot: MealSlot, idx: number): { name: string; allergens:
 }
 
 export async function GET(request: NextRequest) {
-  ensureDb();
-  const { searchParams } = new URL(request.url);
-  const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
-  const week = parseInt(searchParams.get('week') || '1');
-  const format = searchParams.get('format') || 'xlsx';
-  const paxCity = searchParams.get('paxCity') || '60';
-  const paxSued = searchParams.get('paxSued') || '45';
+  try {
+    ensureDb();
+    const { searchParams } = new URL(request.url);
+    const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
+    const week = parseInt(searchParams.get('week') || '1');
+    const format = searchParams.get('format') || 'xlsx';
+    const paxCity = searchParams.get('paxCity') || '60';
+    const paxSued = searchParams.get('paxSued') || '45';
 
-  // Get plan data
-  let plan = getWeeklyPlan(year, week);
-  if (!plan) {
-    const rotWeekNr = ((week - 1) % 6) + 1;
-    generateWeekFromRotation(year, week, rotWeekNr);
-    plan = getWeeklyPlan(year, week);
+    // Get plan data
+    let plan = getWeeklyPlan(year, week);
+    if (!plan) {
+      const rotWeekNr = ((week - 1) % 6) + 1;
+      generateWeekFromRotation(year, week, rotWeekNr);
+      plan = getWeeklyPlan(year, week);
+    }
+    if (!plan) {
+      return NextResponse.json({ error: 'Kein Plan gefunden' }, { status: 404 });
+    }
+
+    const tempMap = getTemperaturesForWeek(year, week);
+
+    if (format === 'csv') {
+      return generateCSV(plan, week, tempMap);
+    }
+
+    return generateXLSX(plan, year, week, paxCity, paxSued, tempMap);
+  } catch (err) {
+    console.error('GET /api/export error:', err);
+    return NextResponse.json(
+      { error: 'Interner Serverfehler' },
+      { status: 500 }
+    );
   }
-  if (!plan) {
-    return NextResponse.json({ error: 'Kein Plan gefunden' }, { status: 404 });
-  }
-
-  const tempMap = getTemperaturesForWeek(year, week);
-
-  if (format === 'csv') {
-    return generateCSV(plan, week, tempMap);
-  }
-
-  return generateXLSX(plan, year, week, paxCity, paxSued, tempMap);
 }
 
 function generateCSV(plan: NonNullable<ReturnType<typeof getWeeklyPlan>>, week: number, tempMap: TempMap): NextResponse {

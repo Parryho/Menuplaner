@@ -29,8 +29,9 @@ const SLOT_NAMES = ['soup', 'main1', 'side1a', 'side1b', 'main2', 'side2a', 'sid
 const DEFAULT_PAX: Record<string, number> = { city: 60, sued: 45 };
 
 export async function GET(request: NextRequest) {
-  ensureDb();
-  const db = getDb();
+  try {
+    ensureDb();
+    const db = getDb();
   const { searchParams } = new URL(request.url);
   const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()));
   const week = parseInt(searchParams.get('week') || '1');
@@ -74,8 +75,8 @@ export async function GET(request: NextRequest) {
            i.name, i.category, i.price_per_unit, i.price_unit, i.supplier
     FROM recipe_items ri
     JOIN ingredients i ON ri.ingredient_id = i.id
-    WHERE ri.dish_id IN (${uniqueDishIds.join(',')})
-  `).all() as Array<{
+    WHERE ri.dish_id IN (${uniqueDishIds.map(() => '?').join(',')})
+  `).all(...uniqueDishIds) as Array<{
     dish_id: number; ingredient_id: number; quantity: number; unit: string;
     name: string; category: string; price_per_unit: number; price_unit: string; supplier: string;
   }>;
@@ -154,10 +155,17 @@ export async function GET(request: NextRequest) {
     subtotal: Math.round(items.reduce((sum, i) => sum + i.estimated_cost, 0) * 100) / 100,
   })).sort((a, b) => a.category.localeCompare(b.category));
 
-  return NextResponse.json({
-    year,
-    week,
-    categories,
-    grandTotal: Math.round(grandTotal * 100) / 100,
-  });
+    return NextResponse.json({
+      year,
+      week,
+      categories,
+      grandTotal: Math.round(grandTotal * 100) / 100,
+    });
+  } catch (err) {
+    console.error('GET /api/einkaufsliste error:', err);
+    return NextResponse.json(
+      { error: 'Interner Serverfehler' },
+      { status: 500 }
+    );
+  }
 }

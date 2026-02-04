@@ -9,30 +9,38 @@ function ensureDb() {
 }
 
 export async function GET(request: NextRequest) {
-  ensureDb();
-  const db = getDb();
-  const { searchParams } = new URL(request.url);
-  const dishId = searchParams.get('dishId');
+  try {
+    ensureDb();
+    const db = getDb();
+    const { searchParams } = new URL(request.url);
+    const dishId = searchParams.get('dishId');
 
-  if (!dishId) {
-    return NextResponse.json({ error: 'dishId erforderlich' }, { status: 400 });
+    if (!dishId) {
+      return NextResponse.json({ error: 'dishId erforderlich' }, { status: 400 });
+    }
+
+    const items = db.prepare(`
+      SELECT ri.id, ri.dish_id, ri.ingredient_id, ri.quantity, ri.unit, ri.preparation_note, ri.sort_order,
+             i.name as ingredient_name, i.category as ingredient_category,
+             i.price_per_unit, i.price_unit
+      FROM recipe_items ri
+      JOIN ingredients i ON ri.ingredient_id = i.id
+      WHERE ri.dish_id = ?
+      ORDER BY ri.sort_order
+    `).all(dishId);
+
+    const dish = db.prepare(
+      'SELECT id, name, prep_instructions, prep_time_minutes FROM dishes WHERE id = ?'
+    ).get(dishId) as { id: number; name: string; prep_instructions: string; prep_time_minutes: number } | undefined;
+
+    return NextResponse.json({ dish, items });
+  } catch (err) {
+    console.error('GET /api/recipes error:', err);
+    return NextResponse.json(
+      { error: 'Interner Serverfehler' },
+      { status: 500 }
+    );
   }
-
-  const items = db.prepare(`
-    SELECT ri.id, ri.dish_id, ri.ingredient_id, ri.quantity, ri.unit, ri.preparation_note, ri.sort_order,
-           i.name as ingredient_name, i.category as ingredient_category,
-           i.price_per_unit, i.price_unit
-    FROM recipe_items ri
-    JOIN ingredients i ON ri.ingredient_id = i.id
-    WHERE ri.dish_id = ?
-    ORDER BY ri.sort_order
-  `).all(dishId);
-
-  const dish = db.prepare(
-    'SELECT id, name, prep_instructions, prep_time_minutes FROM dishes WHERE id = ?'
-  ).get(dishId) as { id: number; name: string; prep_instructions: string; prep_time_minutes: number } | undefined;
-
-  return NextResponse.json({ dish, items });
 }
 
 export async function POST(request: NextRequest) {
@@ -66,41 +74,57 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  ensureDb();
-  const db = getDb();
-  const body = await request.json();
+  try {
+    ensureDb();
+    const db = getDb();
+    const body = await request.json();
 
-  // Update recipe item
-  if (body.id) {
-    const { id, quantity, unit, preparation_note } = body;
-    db.prepare(
-      'UPDATE recipe_items SET quantity = ?, unit = ?, preparation_note = ? WHERE id = ?'
-    ).run(quantity, unit, preparation_note || '', id);
-    return NextResponse.json({ ok: true });
+    // Update recipe item
+    if (body.id) {
+      const { id, quantity, unit, preparation_note } = body;
+      db.prepare(
+        'UPDATE recipe_items SET quantity = ?, unit = ?, preparation_note = ? WHERE id = ?'
+      ).run(quantity, unit, preparation_note || '', id);
+      return NextResponse.json({ ok: true });
+    }
+
+    // Update dish prep instructions
+    if (body.dish_id && body.prep_instructions !== undefined) {
+      const { dish_id, prep_instructions, prep_time_minutes } = body;
+      db.prepare(
+        'UPDATE dishes SET prep_instructions = ?, prep_time_minutes = ? WHERE id = ?'
+      ).run(prep_instructions || '', prep_time_minutes || 0, dish_id);
+      return NextResponse.json({ ok: true });
+    }
+
+    return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 });
+  } catch (err) {
+    console.error('PUT /api/recipes error:', err);
+    return NextResponse.json(
+      { error: 'Interner Serverfehler' },
+      { status: 500 }
+    );
   }
-
-  // Update dish prep instructions
-  if (body.dish_id && body.prep_instructions !== undefined) {
-    const { dish_id, prep_instructions, prep_time_minutes } = body;
-    db.prepare(
-      'UPDATE dishes SET prep_instructions = ?, prep_time_minutes = ? WHERE id = ?'
-    ).run(prep_instructions || '', prep_time_minutes || 0, dish_id);
-    return NextResponse.json({ ok: true });
-  }
-
-  return NextResponse.json({ error: 'Ungültige Anfrage' }, { status: 400 });
 }
 
 export async function DELETE(request: NextRequest) {
-  ensureDb();
-  const db = getDb();
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
+  try {
+    ensureDb();
+    const db = getDb();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
 
-  if (!id) {
-    return NextResponse.json({ error: 'ID erforderlich' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'ID erforderlich' }, { status: 400 });
+    }
+
+    db.prepare('DELETE FROM recipe_items WHERE id = ?').run(id);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error('DELETE /api/recipes error:', err);
+    return NextResponse.json(
+      { error: 'Interner Serverfehler' },
+      { status: 500 }
+    );
   }
-
-  db.prepare('DELETE FROM recipe_items WHERE id = ?').run(id);
-  return NextResponse.json({ ok: true });
 }

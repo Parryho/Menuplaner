@@ -39,8 +39,9 @@ const SLOT_NAMES = ['soup', 'main1', 'side1a', 'side1b', 'main2', 'side2a', 'sid
 const DEFAULT_PAX: Record<string, number> = { city: 60, sued: 45 };
 
 export async function GET(request: NextRequest) {
-  ensureDb();
-  const db = getDb();
+  try {
+    ensureDb();
+    const db = getDb();
   const { searchParams } = new URL(request.url);
   const year = parseInt(searchParams.get('year') || String(new Date().getFullYear()));
   const week = parseInt(searchParams.get('week') || '1');
@@ -78,27 +79,26 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Dish name lookup
+  // Dish name + recipe items lookup
   const dishLookup: Record<number, string> = {};
-  if (dishIds.size > 0) {
-    const dishRows = db.prepare(
-      `SELECT id, name FROM dishes WHERE id IN (${[...dishIds].join(',')})`
-    ).all() as Array<{ id: number; name: string }>;
-    for (const d of dishRows) dishLookup[d.id] = d.name;
-  }
-
-  // Recipe items lookup
   const recipeLookup: Record<number, RecipeItemRow[]> = {};
   if (dishIds.size > 0) {
+    const dishIdArr = [...dishIds];
+    const dishPlaceholders = dishIdArr.map(() => '?').join(',');
+    const dishRows = db.prepare(
+      `SELECT id, name FROM dishes WHERE id IN (${dishPlaceholders})`
+    ).all(...dishIdArr) as Array<{ id: number; name: string }>;
+    for (const d of dishRows) dishLookup[d.id] = d.name;
+
     const recipeRows = db.prepare(`
       SELECT ri.dish_id, i.name as ingredient_name, i.category as ingredient_category,
              ri.quantity, ri.unit, ri.preparation_note,
              i.price_per_unit, i.price_unit
       FROM recipe_items ri
       JOIN ingredients i ON ri.ingredient_id = i.id
-      WHERE ri.dish_id IN (${[...dishIds].join(',')})
+      WHERE ri.dish_id IN (${dishPlaceholders})
       ORDER BY ri.sort_order
-    `).all() as (RecipeItemRow & { dish_id: number })[];
+    `).all(...dishIdArr) as (RecipeItemRow & { dish_id: number })[];
     for (const r of recipeRows) {
       if (!recipeLookup[r.dish_id]) recipeLookup[r.dish_id] = [];
       recipeLookup[r.dish_id].push(r);
@@ -164,5 +164,12 @@ export async function GET(request: NextRequest) {
   // Sort by day, meal, location
   result.sort((a, b) => a.day_of_week - b.day_of_week || a.meal.localeCompare(b.meal) || a.location.localeCompare(b.location));
 
-  return NextResponse.json({ year, week, production: result });
+    return NextResponse.json({ year, week, production: result });
+  } catch (err) {
+    console.error('GET /api/produktionsliste error:', err);
+    return NextResponse.json(
+      { error: 'Interner Serverfehler' },
+      { status: 500 }
+    );
+  }
 }
