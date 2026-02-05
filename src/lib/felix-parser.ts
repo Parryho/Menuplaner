@@ -35,7 +35,21 @@ const DAY_OCR_FIXES: Record<string, string> = {
   er: 'Fr',  // "Er" -> Freitag
   oi: 'Di',  // "Oi" -> Dienstag
   oo: 'Do',  // "Oo" -> Donnerstag
+  '0i': 'Di',  // "0i" -> Dienstag (zero instead of D)
+  '0o': 'Do',  // "0o" -> Donnerstag
 };
+
+/** Common OCR garbage patterns from document borders/watermarks */
+const GARBAGE_PATTERNS = [
+  /^[A-Z]{2,6}$/, // Short uppercase words like "BE", "FEN", "BENCENE"
+  /^[a-z]{2,4}$/,  // Short lowercase words
+  /FORD|BABE|SWEET|VULCE|BORN|DERN?/i,
+  /^[.,\-_|]+$/,  // Pure punctuation
+  /^N$/i, /^a$/i, /^S$/i, // Single letters
+  /Seite \d/i,  // Page markers
+  /\.rpt$/i,  // Report file extensions
+  /Hotel.*Report/i,
+];
 
 /**
  * Fix common OCR errors, but ONLY in tokens that already look mostly numeric.
@@ -87,6 +101,16 @@ function extractDay(line: string): string {
 }
 
 /**
+ * Check if a token is garbage (OCR noise from borders/watermarks)
+ */
+function isGarbageToken(token: string): boolean {
+  for (const pattern of GARBAGE_PATTERNS) {
+    if (pattern.test(token)) return true;
+  }
+  return false;
+}
+
+/**
  * Extract numbers from a line, skipping date-embedded digits.
  * Strips pipe characters (table separators) and isolated single letters.
  */
@@ -107,11 +131,17 @@ function extractNumbers(line: string): number[] {
   }
   cleaned = cleaned.replace(/ges(?:amt)?\.?/gi, '   ');
 
-  // 4. Split into tokens and process each
+  // 4. Remove garbage sequences like "KO 3 BE" - number surrounded by uppercase
+  cleaned = cleaned.replace(/[A-Z]{2,}\s+\d+\s+[A-Z]{2,}/g, '   ');
+
+  // 5. Split into tokens and process each
   const tokens = cleaned.split(/\s+/).filter(Boolean);
   const numbers: number[] = [];
 
   for (const token of tokens) {
+    // Skip garbage tokens (OCR noise)
+    if (isGarbageToken(token)) continue;
+
     // Skip purely alphabetic tokens (noise like "BENCENE", "FORD", etc.)
     if (/^[a-zA-ZÄÖÜäöüß]+$/.test(token)) continue;
 
@@ -270,9 +300,54 @@ function assignColumns(nums: number[]): Omit<DayCount, 'date' | 'day' | 'confide
   };
 }
 
+/**
+ * Check if a line looks like a valid data row (has date + "Ges." pattern)
+ * vs garbage/booking notes/other text
+ */
+function isValidDataLine(line: string): boolean {
+  const lower = line.toLowerCase();
+
+  // Must have "Ges." or "Gesamt" to be a data line
+  if (!lower.includes('ges')) return false;
+
+  // Skip booking notes (contain specific keywords)
+  if (lower.includes('vegan') || lower.includes('vegetarisch')) return false;
+  if (lower.includes('universität') || lower.includes('gymnasium')) return false;
+  if (lower.includes('bitte') || lower.includes('verpflegung')) return false;
+  if (lower.includes('sem ') || lower.includes('gross') || lower.includes('hinrichs')) return false;
+
+  // Skip page footers/headers
+  if (lower.includes('seite') || lower.includes('.rpt') || lower.includes('report')) return false;
+  if (lower.includes('pensionsliste') && lower.includes('von')) return false;
+
+  return true;
+}
+
+/**
+ * Pre-process raw OCR text to clean up common issues
+ * IMPORTANT: Don't merge lines - process line by line
+ */
+function preprocessOcrText(text: string): string {
+  // Process each line separately to avoid merging
+  return text.split('\n').map(line => {
+    let cleaned = line;
+
+    // Remove common garbage patterns that span multiple characters (within the line only)
+    cleaned = cleaned.replace(/[A-Z]{3,}(?:[ \t]+[A-Z]{2,})+/g, ' '); // Sequences like "BE FEN SE"
+    cleaned = cleaned.replace(/\b[A-Z]{2}[ \t]+[A-Z]{2}[ \t]+[A-Z]{2}\b/g, ' '); // "BE EN SE"
+
+    // Clean up multiple spaces (not newlines)
+    cleaned = cleaned.replace(/[ \t]{3,}/g, '  ');
+
+    return cleaned;
+  }).join('\n');
+}
+
 /** Main parser: converts Felix OCR/PDF text to structured data */
 export function parseFelixText(text: string): FelixResult {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  // Pre-process the text to remove obvious garbage
+  const processedText = preprocessOcrText(text);
+  const lines = processedText.split('\n').map(l => l.trim()).filter(Boolean);
   const days: DayCount[] = [];
 
   detectHeaderColumns(lines);
@@ -282,6 +357,7 @@ export function parseFelixText(text: string): FelixResult {
   for (const line of lines) {
     const date = extractDate(line);
     if (!date) continue;
+    if (!isValidDataLine(line)) continue;
     const nums = extractNumbers(line);
     if (nums.length > refLineNumCount) {
       refLineNumCount = nums.length;
@@ -292,18 +368,14 @@ export function parseFelixText(text: string): FelixResult {
     const date = extractDate(line);
     if (!date) continue;
 
-    // Skip lines that are clearly not data rows:
-    // - Header/timestamp lines (contain "Pensionsliste", "von...bis", month names like "Feb", "Jan")
-    // - Booking notes (contain names, long text without "Ges.")
-    const lower = line.toLowerCase();
-    if (lower.includes('pensionsliste') || (lower.includes('von') && lower.includes('bis'))) continue;
-    if (/\b(jan|feb|mär|apr|mai|jun|jul|aug|sep|okt|nov|dez)\b/i.test(line)) continue;
+    // Skip lines that are clearly not data rows
+    if (!isValidDataLine(line)) continue;
 
-    // Must contain "Ges." or look like a data line with numbers
-    const hasGes = lower.includes('ges');
+    // Skip header/timestamp lines with month names
+    if (/\b(jan|feb|mär|apr|mai|jun|jul|aug|sep|okt|nov|dez)\b/i.test(line) &&
+        line.toLowerCase().includes('pensionsliste')) continue;
+
     const nums = extractNumbers(line);
-    if (!hasGes && nums.length < 2) continue;
-
     const dayName = extractDay(line);
 
     // Need at least 2 numbers to be a valid data row

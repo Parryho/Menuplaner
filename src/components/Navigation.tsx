@@ -83,6 +83,9 @@ export default function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Hide navigation on login page
+  if (pathname === '/login') return null;
+
   return (
     <>
       {/* Mobile Header */}
@@ -197,10 +200,20 @@ export default function Navigation() {
             })}
           </nav>
 
-          {/* Footer Info */}
-          <div className="px-6 py-4 border-t border-primary-700 text-xs text-primary-400">
-            <div className="flex items-center justify-between">
-              <span>Version 1.0</span>
+          {/* Footer */}
+          <div className="px-4 py-4 border-t border-primary-700">
+            <button
+              onClick={async () => {
+                await fetch('/api/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+              }}
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-primary-300 hover:text-white hover:bg-primary-700 rounded-lg transition-colors"
+            >
+              <span>&#x2190;</span>
+              <span>Abmelden</span>
+            </button>
+            <div className="flex items-center justify-between mt-2 px-3 text-xs text-primary-500">
+              <span>v1.0</span>
               <span>{new Date().getFullYear()}</span>
             </div>
           </div>

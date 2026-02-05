@@ -3,4 +3,15 @@ node_modules
 .git
 data
 .env.local
+.env*.local
 nul
+coverage
+test-results
+playwright-report
+.vscode
+*.md
+!README.md
+.claude
+scripts
+C:Dev*
+tender-sparking-hummingbird.md
