@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { DAY_NAMES, getISOWeek } from '@/lib/constants';
+import { api } from '@/lib/api-client';
 
 interface ProductionIngredient {
   name: string;
@@ -45,16 +46,23 @@ export default function ProduktionslistePage() {
   const [week, setWeek] = useState(getISOWeek(now));
   const [data, setData] = useState<ProductionEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   const loadData = useCallback(() => {
     setLoading(true);
+    setError(null);
     const params = new URLSearchParams({ year: String(year), week: String(week) });
     if (selectedDay !== null) params.set('day', String(selectedDay));
-    fetch(`/api/produktionsliste?${params}`)
-      .then(r => r.json())
-      .then(d => { setData(d.production || []); setLoading(false); })
-      .catch(() => setLoading(false));
+    api.get<{ production: ProductionEntry[] }>(`/api/produktionsliste?${params}`)
+      .then(d => {
+        setData(d.production || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message || 'Fehler beim Laden der Produktionsliste');
+        setLoading(false);
+      });
   }, [year, week, selectedDay]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -68,6 +76,12 @@ export default function ProduktionslistePage() {
 
   return (
     <div className="space-y-5">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+          <strong>Fehler:</strong> {error}
+        </div>
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-primary-900">Produktionsliste</h1>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { api } from '@/lib/api-client';
 
 interface AKEvent {
   id: number;
@@ -45,27 +46,44 @@ export default function EventsPage() {
   const [airtableStatus, setAirtableStatus] = useState<{ configured: boolean } | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<{ synced: number; created: number; updated: number; errors: string[] } | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadEvents();
     // Check Airtable connection
-    fetch('/api/airtable?action=status').then(r => r.json()).then(setAirtableStatus).catch(() => {});
+    api.get<{ configured: boolean }>('/api/airtable?action=status')
+      .then(setAirtableStatus)
+      .catch(() => {});
   }, []);
 
   function loadEvents() {
-    fetch('/api/events').then(r => r.json()).then(setEvents);
+    api.get<AKEvent[]>('/api/events')
+      .then(setEvents)
+      .catch(err => setError(err.message));
   }
 
   function handleSave() {
-    const method = editEvent ? 'PUT' : 'POST';
     const body = editEvent ? { ...form, id: editEvent.id } : form;
-    fetch('/api/events', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      .then(() => { loadEvents(); setShowForm(false); setEditEvent(null); setForm(emptyForm); });
+    const promise = editEvent
+      ? api.put<void>('/api/events', body)
+      : api.post<void>('/api/events', body);
+
+    promise
+      .then(() => {
+        loadEvents();
+        setShowForm(false);
+        setEditEvent(null);
+        setForm(emptyForm);
+        setError('');
+      })
+      .catch(err => setError(err.message));
   }
 
   function handleDelete(id: number) {
     if (!confirm('Event wirklich löschen?')) return;
-    fetch(`/api/events?id=${id}`, { method: 'DELETE' }).then(() => loadEvents());
+    api.delete<void>(`/api/events?id=${id}`)
+      .then(() => loadEvents())
+      .catch(err => setError(err.message));
   }
 
   function startEdit(event: AKEvent) {
@@ -105,6 +123,14 @@ export default function EventsPage() {
 
   return (
     <div className="space-y-5">
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-red-500 hover:text-red-700 font-bold">×</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -147,16 +173,11 @@ export default function EventsPage() {
                 setSyncing(true);
                 setSyncResult(null);
                 try {
-                  const res = await fetch('/api/airtable?action=sync');
-                  const data = await res.json();
-                  if (data.error) {
-                    setSyncResult({ synced: 0, created: 0, updated: 0, errors: [data.error] });
-                  } else {
-                    setSyncResult(data);
-                    loadEvents();
-                  }
-                } catch {
-                  setSyncResult({ synced: 0, created: 0, updated: 0, errors: ['Verbindungsfehler'] });
+                  const data = await api.get<{ synced: number; created: number; updated: number; errors: string[] }>('/api/airtable?action=sync');
+                  setSyncResult(data);
+                  loadEvents();
+                } catch (err) {
+                  setSyncResult({ synced: 0, created: 0, updated: 0, errors: [err instanceof Error ? err.message : 'Verbindungsfehler'] });
                 }
                 setSyncing(false);
               }}

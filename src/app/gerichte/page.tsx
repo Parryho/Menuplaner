@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import AllergenBadge from '@/components/AllergenBadge';
 import RecipeEditor from '@/components/RecipeEditor';
+import { api } from '@/lib/api-client';
 import type { DishFull } from '@/lib/types';
 
 type Dish = DishFull;
@@ -41,30 +42,49 @@ export default function GerichtePage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importError, setImportError] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadDishes();
   }, []);
 
-  function loadDishes() {
-    fetch('/api/dishes').then(r => r.json()).then(setDishes);
+  async function loadDishes() {
+    try {
+      const data = await api.get<Dish[]>('/api/dishes');
+      setDishes(data);
+      setError('');
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
-  function handleSave() {
-    const method = editDish ? 'PUT' : 'POST';
-    const body = editDish ? { ...form, id: editDish.id } : form;
-    fetch('/api/dishes', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      .then(() => {
-        loadDishes();
-        setShowForm(false);
-        setEditDish(null);
-        setForm({ name: '', category: 'suppe', allergens: '', season: 'all' });
-      });
+  async function handleSave() {
+    try {
+      const body = editDish ? { ...form, id: editDish.id } : form;
+      if (editDish) {
+        await api.put('/api/dishes', body);
+      } else {
+        await api.post('/api/dishes', body);
+      }
+      loadDishes();
+      setShowForm(false);
+      setEditDish(null);
+      setForm({ name: '', category: 'suppe', allergens: '', season: 'all' });
+      setError('');
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
-  function handleDelete(id: number) {
+  async function handleDelete(id: number) {
     if (!confirm('Gericht wirklich löschen?')) return;
-    fetch(`/api/dishes?id=${id}`, { method: 'DELETE' }).then(() => loadDishes());
+    try {
+      await api.delete(`/api/dishes?id=${id}`);
+      loadDishes();
+      setError('');
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
   async function handleImport() {
@@ -73,13 +93,7 @@ export default function GerichtePage() {
     setImportError('');
     setImportResult(null);
     try {
-      const res = await fetch('/api/recipe-import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: importUrl.trim() }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Import fehlgeschlagen');
+      const data = await api.post<ImportResult>('/api/recipe-import', { url: importUrl.trim() });
       setImportResult(data);
     } catch (err) {
       setImportError((err as Error).message);
@@ -90,22 +104,19 @@ export default function GerichtePage() {
 
   async function saveImportedDish() {
     if (!importResult) return;
-    const body = {
-      name: importResult.name,
-      category: importResult.category,
-      allergens: importResult.allergens,
-      season: 'all',
-    };
-    const res = await fetch('/api/dishes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
+    try {
+      await api.post('/api/dishes', {
+        name: importResult.name,
+        category: importResult.category,
+        allergens: importResult.allergens,
+        season: 'all',
+      });
       loadDishes();
       setImportResult(null);
       setImportUrl('');
       setShowImport(false);
+    } catch (err) {
+      setImportError((err as Error).message);
     }
   }
 
@@ -125,6 +136,14 @@ export default function GerichtePage() {
 
   return (
     <div className="space-y-5">
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-red-500 hover:text-red-700 font-bold">×</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>

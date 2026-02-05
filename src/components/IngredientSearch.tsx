@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { api } from '@/lib/api-client';
 
 interface Ingredient {
   id: number;
@@ -28,11 +29,14 @@ export default function IngredientSearch({ onSelect, excludeIds = [] }: Ingredie
       return;
     }
     const timer = setTimeout(() => {
-      fetch(`/api/ingredients?search=${encodeURIComponent(query)}`)
-        .then(r => r.json())
-        .then((data: Ingredient[]) => {
+      api.get<Ingredient[]>(`/api/ingredients?search=${encodeURIComponent(query)}`)
+        .then((data) => {
           setResults(data.filter(i => !excludeIds.includes(i.id)));
           setIsOpen(true);
+        })
+        .catch((err) => {
+          console.error('Ingredient search error:', err);
+          setResults([]);
         });
     }, 200);
     return () => clearTimeout(timer);

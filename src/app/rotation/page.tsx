@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import WeekGrid from '@/components/WeekGrid';
 import { getISOWeek } from '@/lib/constants';
 import type { WeekPlan } from '@/lib/types';
+import { api } from '@/lib/api-client';
 
 export default function RotationPageWrapper() {
   return <Suspense fallback={<div className="text-center py-8">Lade...</div>}><RotationPage /></Suspense>;
@@ -50,21 +51,32 @@ function RotationPage() {
   const [selectedWeek, setSelectedWeek] = useState(parseInt(searchParams.get('week') || String(currentRotationWeek)));
   const [plan, setPlan] = useState<WeekPlan | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const dates = getDatesForWeek(selectedWeek, currentRotationWeek);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/plans?rotation=${selectedWeek}`)
-      .then(r => r.json())
+    setError(null);
+    api.get<WeekPlan>(`/api/plans?rotation=${selectedWeek}`)
       .then(data => {
         setPlan(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message || 'Fehler beim Laden der Rotation');
         setLoading(false);
       });
   }, [selectedWeek]);
 
   return (
     <div className="space-y-4">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+          <strong>Fehler:</strong> {error}
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">6-Wochen-Rotation</h1>
         <span className="text-sm text-primary-500">KW {getISOWeek(new Date()) + (selectedWeek - currentRotationWeek)}</span>

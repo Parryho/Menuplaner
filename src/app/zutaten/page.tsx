@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { api } from '@/lib/api-client';
 import { INGREDIENT_CATEGORIES, UNITS } from '@/lib/constants';
 
 interface Ingredient {
@@ -21,36 +22,50 @@ export default function ZutatenPage() {
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<Ingredient | null>(null);
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '', category: 'gemuese', unit: 'kg', price_per_unit: 0, price_unit: 'kg', supplier: '',
   });
 
   useEffect(() => { loadIngredients(); }, []);
 
-  function loadIngredients() {
-    fetch('/api/ingredients').then(r => r.json()).then(setIngredients);
+  async function loadIngredients() {
+    try {
+      const data = await api.get<Ingredient[]>('/api/ingredients');
+      setIngredients(data);
+      setError('');
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
-  function handleSave() {
-    const method = editItem ? 'PUT' : 'POST';
-    const body = editItem ? { ...form, id: editItem.id } : form;
-    fetch('/api/ingredients', {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    }).then(r => {
-      if (r.ok) {
-        loadIngredients();
-        setShowForm(false);
-        setEditItem(null);
-        setForm({ name: '', category: 'gemuese', unit: 'kg', price_per_unit: 0, price_unit: 'kg', supplier: '' });
+  async function handleSave() {
+    try {
+      const body = editItem ? { ...form, id: editItem.id } : form;
+      if (editItem) {
+        await api.put('/api/ingredients', body);
+      } else {
+        await api.post('/api/ingredients', body);
       }
-    });
+      loadIngredients();
+      setShowForm(false);
+      setEditItem(null);
+      setForm({ name: '', category: 'gemuese', unit: 'kg', price_per_unit: 0, price_unit: 'kg', supplier: '' });
+      setError('');
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
-  function handleDelete(id: number) {
+  async function handleDelete(id: number) {
     if (!confirm('Zutat wirklich löschen?')) return;
-    fetch(`/api/ingredients?id=${id}`, { method: 'DELETE' }).then(() => loadIngredients());
+    try {
+      await api.delete(`/api/ingredients?id=${id}`);
+      loadIngredients();
+      setError('');
+    } catch (err) {
+      setError((err as Error).message);
+    }
   }
 
   function startEdit(item: Ingredient) {
@@ -75,6 +90,14 @@ export default function ZutatenPage() {
 
   return (
     <div className="space-y-5">
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 flex justify-between items-center">
+          <span>{error}</span>
+          <button onClick={() => setError('')} className="text-red-500 hover:text-red-700 font-bold">×</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>

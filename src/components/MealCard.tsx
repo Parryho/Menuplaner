@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import AllergenBadge from './AllergenBadge';
 import { getSlotCategory } from '@/lib/constants';
+import { api } from '@/lib/api-client';
 import type { Dish, MealSlot, TempData } from '@/lib/types';
 
 interface MealCardProps {
@@ -142,13 +143,18 @@ async function fetchDishesForSlot(slotKey: string): Promise<Dish[]> {
   const cacheKey = categories.join(',');
   if (dishCache[cacheKey]) return dishCache[cacheKey];
 
-  const results = await Promise.all(
-    categories.map(cat => fetch(`/api/dishes?category=${cat}`).then(r => r.json()))
-  );
-  const dishes: Dish[] = results.flat();
-  dishes.sort((a, b) => a.name.localeCompare(b.name));
-  dishCache[cacheKey] = dishes;
-  return dishes;
+  try {
+    const results = await Promise.all(
+      categories.map(cat => api.get<Dish[]>(`/api/dishes?category=${cat}`))
+    );
+    const dishes: Dish[] = results.flat();
+    dishes.sort((a, b) => a.name.localeCompare(b.name));
+    dishCache[cacheKey] = dishes;
+    return dishes;
+  } catch (error) {
+    console.error('Error fetching dishes:', error);
+    return [];
+  }
 }
 
 function DishDropdown({ slotKey, currentDish, onSelect, onClose }: {
@@ -269,19 +275,17 @@ export default function MealCard({ slot, title, compact, year, calendarWeek, day
       if (year && calendarWeek && dayOfWeek !== undefined && meal && location) {
         if (saveTimer[slotKey]) clearTimeout(saveTimer[slotKey]);
         const timer = setTimeout(() => {
-          fetch('/api/temperatures', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              year,
-              calendarWeek,
-              dayOfWeek,
-              meal,
-              location,
-              dishSlot: slotKey,
-              tempCore: updated.core,
-              tempServing: updated.serving,
-            }),
+          api.post('/api/temperatures', {
+            year,
+            calendarWeek,
+            dayOfWeek,
+            meal,
+            location,
+            dishSlot: slotKey,
+            tempCore: updated.core,
+            tempServing: updated.serving,
+          }).catch((error) => {
+            console.error('Error saving temperature:', error);
           });
         }, 800);
         setSaveTimer(prev => ({ ...prev, [slotKey]: timer }));

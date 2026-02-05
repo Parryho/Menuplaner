@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import Tesseract from 'tesseract.js';
 import { preprocessImage } from '@/lib/image-preprocess';
+import { api } from '@/lib/api-client';
 import {
   parseFelixText,
   confidenceLevel,
@@ -149,12 +150,12 @@ export default function FelixPage() {
     const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
     const isoDate = `${year}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
 
-    await fetch('/api/ocr', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: isoDate, location, meal_type: meal, count }),
-    });
-    setSavedRows(prev => new Set(prev).add(`${day.date}-${meal}`));
+    try {
+      await api.post('/api/ocr', { date: isoDate, location, meal_type: meal, count });
+      setSavedRows(prev => new Set(prev).add(`${day.date}-${meal}`));
+    } catch (err) {
+      console.error('Error saving day:', err);
+    }
   }
 
   async function saveAll() {

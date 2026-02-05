@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
 import WeekGrid from '@/components/WeekGrid';
 import { getISOWeek, getSlotCategory } from '@/lib/constants';
+import { api } from '@/lib/api-client';
 import type { Dish, WeekPlan, DragData } from '@/lib/types';
 
 export default function WochenplanPageWrapper() {
@@ -36,6 +37,7 @@ function WochenplanPage() {
   const [year, setYear] = useState(parseInt(searchParams.get('year') || now.getFullYear().toString()));
   const [week, setWeek] = useState(parseInt(searchParams.get('week') || String(getISOWeek(now))));
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeDrag, setActiveDrag] = useState<DragData | null>(null);
 
   const sensors = useSensors(
@@ -47,10 +49,16 @@ function WochenplanPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/plans?year=${year}&week=${week}`)
-      .then(r => r.json())
+    setError(null);
+
+    api.get<WeekPlan>(`/api/plans?year=${year}&week=${week}`)
       .then(planData => {
         setPlan(planData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to load week plan:', err);
+        setError(err instanceof Error ? err.message : 'Fehler beim Laden des Wochenplans');
         setLoading(false);
       });
   }, [year, week]);
@@ -65,6 +73,9 @@ function WochenplanPage() {
   };
 
   const handleDishChange = useCallback((dayOfWeek: number, meal: string, location: string, slotKey: string, dish: Dish | null) => {
+    // Store previous state for rollback
+    const prevPlan = plan;
+
     // Optimistic UI update
     setPlan(prev => {
       if (!prev) return prev;
@@ -87,20 +98,21 @@ function WochenplanPage() {
     });
 
     // Persist to API
-    fetch('/api/plans', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        year,
-        calendarWeek: week,
-        dayOfWeek,
-        meal,
-        location,
-        slot: slotKey,
-        dishId: dish?.id || null,
-      }),
+    api.put('/api/plans', {
+      year,
+      calendarWeek: week,
+      dayOfWeek,
+      meal,
+      location,
+      slot: slotKey,
+      dishId: dish?.id || null,
+    }).catch(err => {
+      console.error('Failed to update dish:', err);
+      // Revert optimistic update on error
+      setPlan(prevPlan);
+      setError(err instanceof Error ? err.message : 'Fehler beim Speichern');
     });
-  }, [year, week]);
+  }, [year, week, plan]);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const data = event.active.data.current as DragData | undefined;
@@ -118,6 +130,9 @@ function WochenplanPage() {
 
     // Only allow swapping same category
     if (getSlotCategory(src.slotKey) !== getSlotCategory(dst.slotKey)) return;
+
+    // Store previous state for rollback
+    const prevPlan = plan;
 
     // Optimistic UI: swap both dishes
     setPlan(prev => {
@@ -154,28 +169,49 @@ function WochenplanPage() {
     });
 
     // Persist both changes to API
-    fetch('/api/plans', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    Promise.all([
+      api.put('/api/plans', {
         year, calendarWeek: week,
         dayOfWeek: dst.dayOfWeek, meal: dst.meal, location: dst.location,
         slot: dst.slotKey, dishId: src.dish?.id || null,
       }),
-    });
-    fetch('/api/plans', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+      api.put('/api/plans', {
         year, calendarWeek: week,
         dayOfWeek: src.dayOfWeek, meal: src.meal, location: src.location,
         slot: src.slotKey, dishId: dst.dish?.id || null,
-      }),
+      })
+    ]).catch(err => {
+      console.error('Failed to swap dishes:', err);
+      // Revert optimistic update on error
+      setPlan(prevPlan);
+      setError(err instanceof Error ? err.message : 'Fehler beim Tauschen der Gerichte');
     });
-  }, [year, week]);
+  }, [year, week, plan]);
 
   return (
     <div className="space-y-5">
+      {/* Error Banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-red-900">Fehler</h3>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-400 hover:text-red-600 transition-colors"
+            aria-label="Schließen"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white rounded-card shadow-card border border-primary-100 p-5">
         <div className="flex items-center justify-between flex-wrap gap-4">

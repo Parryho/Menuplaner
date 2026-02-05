@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { INGREDIENT_CATEGORIES, getISOWeek } from '@/lib/constants';
+import { api } from '@/lib/api-client';
 
 interface ShoppingItem {
   ingredient_id: number;
@@ -36,20 +37,24 @@ export default function EinkaufslistePage() {
   const [categories, setCategories] = useState<ShoppingCategory[]>([]);
   const [grandTotal, setGrandTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [checked, setChecked] = useState<Record<number, boolean>>({});
 
   const loadData = useCallback(() => {
     setLoading(true);
-    fetch(`/api/einkaufsliste?year=${year}&week=${week}`)
-      .then(r => r.json())
+    setError(null);
+    api.get<{ categories: ShoppingCategory[]; grandTotal: number }>(`/api/einkaufsliste?year=${year}&week=${week}`)
       .then(d => {
         setCategories(d.categories || []);
         setGrandTotal(d.grandTotal || 0);
         setLoading(false);
         setChecked({});
       })
-      .catch(() => setLoading(false));
+      .catch(err => {
+        setError(err.message || 'Fehler beim Laden der Einkaufsliste');
+        setLoading(false);
+      });
   }, [year, week]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -67,6 +72,12 @@ export default function EinkaufslistePage() {
 
   return (
     <div className="space-y-5">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+          <strong>Fehler:</strong> {error}
+        </div>
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-primary-900">Einkaufsliste</h1>

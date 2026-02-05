@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { UNITS } from '@/lib/constants';
+import { api } from '@/lib/api-client';
 import IngredientSearch from './IngredientSearch';
 
 interface RecipeItem {
@@ -55,10 +56,11 @@ export default function RecipeEditor({ dishId, dishName, onClose }: RecipeEditor
   const [newNote, setNewNote] = useState('');
   const [pendingIngredient, setPendingIngredient] = useState<{ id: number; name: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const loadRecipe = useCallback(() => {
-    fetch(`/api/recipes?dishId=${dishId}`)
-      .then(r => r.json())
+    setError('');
+    api.get<{ items: RecipeItem[]; dish?: DishInfo }>(`/api/recipes?dishId=${dishId}`)
       .then(data => {
         setItems(data.items || []);
         if (data.dish) {
@@ -66,6 +68,9 @@ export default function RecipeEditor({ dishId, dishName, onClose }: RecipeEditor
           setPrepInstructions(data.dish.prep_instructions || '');
           setPrepTime(data.dish.prep_time_minutes || 0);
         }
+      })
+      .catch(err => {
+        setError(err instanceof Error ? err.message : 'Fehler beim Laden des Rezepts');
       });
   }, [dishId]);
 
@@ -74,45 +79,63 @@ export default function RecipeEditor({ dishId, dishName, onClose }: RecipeEditor
   async function addItem() {
     if (!pendingIngredient) return;
     setSaving(true);
-    await fetch('/api/recipes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    setError('');
+    try {
+      await api.post('/api/recipes', {
         dish_id: dishId,
         ingredient_id: pendingIngredient.id,
         quantity: newQuantity,
         unit: newUnit,
         preparation_note: newNote,
-      }),
-    });
-    setPendingIngredient(null);
-    setNewNote('');
-    setNewQuantity(100);
-    setSaving(false);
-    loadRecipe();
+      });
+      setPendingIngredient(null);
+      setNewNote('');
+      setNewQuantity(100);
+      loadRecipe();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Hinzufügen der Zutat');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function removeItem(id: number) {
-    await fetch(`/api/recipes?id=${id}`, { method: 'DELETE' });
-    loadRecipe();
+    setError('');
+    try {
+      await api.delete(`/api/recipes?id=${id}`);
+      loadRecipe();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Löschen der Zutat');
+    }
   }
 
   async function updateItem(item: RecipeItem, field: string, value: string | number) {
     const updated = { ...item, [field]: value };
-    await fetch('/api/recipes', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: item.id, quantity: updated.quantity, unit: updated.unit, preparation_note: updated.preparation_note }),
-    });
-    loadRecipe();
+    setError('');
+    try {
+      await api.put('/api/recipes', {
+        id: item.id,
+        quantity: updated.quantity,
+        unit: updated.unit,
+        preparation_note: updated.preparation_note,
+      });
+      loadRecipe();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Aktualisieren der Zutat');
+    }
   }
 
   async function savePrep() {
-    await fetch('/api/recipes', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dish_id: dishId, prep_instructions: prepInstructions, prep_time_minutes: prepTime }),
-    });
+    setError('');
+    try {
+      await api.put('/api/recipes', {
+        dish_id: dishId,
+        prep_instructions: prepInstructions,
+        prep_time_minutes: prepTime,
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Speichern der Zubereitungsinformation');
+    }
   }
 
   const totalCost = items.reduce((sum, item) =>
@@ -124,6 +147,13 @@ export default function RecipeEditor({ dishId, dishName, onClose }: RecipeEditor
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-elevated max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        {/* Error banner */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-t-xl p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary-100">
           <div>

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { DAY_NAMES_SHORT, getISOWeek } from '@/lib/constants';
 import type { Dish, MealSlot, WeekPlan, SlotKey } from '@/lib/types';
+import { api } from '@/lib/api-client';
 
 const SLOT_LABELS = ['Su', 'H1', 'B', 'B', 'H2', 'B', 'B', 'De'];
 const SLOT_KEYS: SlotKey[] = ['soup', 'main1', 'side1a', 'side1b', 'main2', 'side2a', 'side2b', 'dessert'];
@@ -20,12 +21,16 @@ export default function DruckPageWrapper() {
 function DruckPage() {
   const searchParams = useSearchParams();
   const [plan, setPlan] = useState<WeekPlan | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const now = new Date();
   const [year, setYear] = useState(parseInt(searchParams.get('year') || now.getFullYear().toString()));
   const [week, setWeek] = useState(parseInt(searchParams.get('week') || String(getISOWeek(now))));
 
   useEffect(() => {
-    fetch(`/api/plans?year=${year}&week=${week}`).then(r => r.json()).then(setPlan);
+    setError(null);
+    api.get<WeekPlan>(`/api/plans?year=${year}&week=${week}`)
+      .then(setPlan)
+      .catch(err => setError(err.message || 'Fehler beim Laden des Plans'));
   }, [year, week]);
 
   const goToCurrentWeek = () => {
@@ -38,6 +43,12 @@ function DruckPage() {
 
   return (
     <div className="print:m-0 print:p-0">
+      {error && (
+        <div className="print:hidden bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4">
+          <strong>Fehler:</strong> {error}
+        </div>
+      )}
+
       {/* Print controls */}
       <div className="print:hidden mb-4 flex items-center gap-4">
         <h1 className="text-2xl font-bold">Druckansicht</h1>

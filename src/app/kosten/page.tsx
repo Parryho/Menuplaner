@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { DAY_NAMES, getISOWeek } from '@/lib/constants';
+import { api } from '@/lib/api-client';
 
 interface CostDish {
   name: string;
@@ -43,24 +44,34 @@ export default function KostenPage() {
   const [summary, setSummary] = useState<CostSummary | null>(null);
   const [days, setDays] = useState<CostDay[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
 
   const loadData = useCallback(() => {
     setLoading(true);
-    fetch(`/api/kosten?year=${year}&week=${week}`)
-      .then(r => r.json())
+    setError(null);
+    api.get<{ summary: CostSummary | null; days: CostDay[] }>(`/api/kosten?year=${year}&week=${week}`)
       .then(d => {
         setSummary(d.summary || null);
         setDays(d.days || []);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(err => {
+        setError(err.message || 'Fehler beim Laden der Kostenübersicht');
+        setLoading(false);
+      });
   }, [year, week]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
   return (
     <div className="space-y-5">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+          <strong>Fehler:</strong> {error}
+        </div>
+      )}
+
       <div>
         <h1 className="text-2xl font-bold text-primary-900">Kosten&uuml;bersicht</h1>
         <p className="text-sm text-primary-500 mt-1">Wareneinsatz pro Woche</p>
