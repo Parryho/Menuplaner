@@ -1,14 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Felix OCR', () => {
-  // FIXME: /felix returns HTTP 500 — page has a server-side rendering error
-  test.skip('page loads', async ({ page }) => {
+  test('page loads', async ({ page }) => {
     const response = await page.goto('/felix');
     expect(response?.status()).toBeLessThan(500);
   });
 
-  // FIXME: depends on /felix page loading correctly
-  test.skip('file upload or text input is present', async ({ page }) => {
+  test('file upload or text input is present', async ({ page }) => {
     await page.goto('/felix');
     await page.waitForTimeout(3000);
     const interactive = page.locator('input, textarea, button');
