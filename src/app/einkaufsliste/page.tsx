@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { INGREDIENT_CATEGORIES } from '@/lib/constants';
+import { INGREDIENT_CATEGORIES, getISOWeek } from '@/lib/constants';
 
 interface ShoppingItem {
   ingredient_id: number;
@@ -16,14 +16,6 @@ interface ShoppingCategory {
   category: string;
   items: ShoppingItem[];
   subtotal: number;
-}
-
-function getISOWeek(d: Date): number {
-  const date = new Date(d.getTime());
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-  const week1 = new Date(date.getFullYear(), 0, 4);
-  return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
 }
 
 function formatQuantity(qty: number, unit: string): string {

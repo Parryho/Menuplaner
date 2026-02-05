@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { DAY_NAMES } from '@/lib/constants';
+import { DAY_NAMES, getISOWeek } from '@/lib/constants';
 
 interface ProductionIngredient {
   name: string;
@@ -31,14 +31,6 @@ const SLOT_LABELS: Record<string, string> = {
   soup: 'Suppe', main1: 'Haupt 1', side1a: 'Beilage 1a', side1b: 'Beilage 1b',
   main2: 'Haupt 2', side2a: 'Beilage 2a', side2b: 'Beilage 2b', dessert: 'Dessert',
 };
-
-function getISOWeek(d: Date): number {
-  const date = new Date(d.getTime());
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-  const week1 = new Date(date.getFullYear(), 0, 4);
-  return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
-}
 
 function formatQuantity(qty: number, unit: string): string {
   if (unit === 'g' && qty >= 1000) return `${(qty / 1000).toFixed(2)} kg`;

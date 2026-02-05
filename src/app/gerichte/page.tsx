@@ -3,14 +3,9 @@
 import { useEffect, useState } from 'react';
 import AllergenBadge from '@/components/AllergenBadge';
 import RecipeEditor from '@/components/RecipeEditor';
+import type { DishFull } from '@/lib/types';
 
-interface Dish {
-  id: number;
-  name: string;
-  category: string;
-  allergens: string;
-  season: string;
-}
+type Dish = DishFull;
 
 const CATEGORIES = [
   { value: 'suppe', label: 'Suppen', icon: '🍜' },

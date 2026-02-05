@@ -3,45 +3,11 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import WeekGrid from '@/components/WeekGrid';
-
-interface WeekPlan {
-  weekNr: number;
-  days: DayPlan[];
-}
-
-interface DayPlan {
-  dayOfWeek: number;
-  mittag: { city: MealSlot; sued: MealSlot };
-  abend: { city: MealSlot; sued: MealSlot };
-}
-
-interface MealSlot {
-  soup: Dish | null;
-  main1: Dish | null;
-  side1a: Dish | null;
-  side1b: Dish | null;
-  main2: Dish | null;
-  side2a: Dish | null;
-  side2b: Dish | null;
-  dessert: Dish | null;
-}
-
-interface Dish {
-  id: number;
-  name: string;
-  allergens: string;
-}
+import { getISOWeek } from '@/lib/constants';
+import type { WeekPlan } from '@/lib/types';
 
 export default function RotationPageWrapper() {
   return <Suspense fallback={<div className="text-center py-8">Lade...</div>}><RotationPage /></Suspense>;
-}
-
-/** Get ISO week number for a date */
-function getISOWeek(d: Date): number {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
 
 /** Get Monday of an ISO week */

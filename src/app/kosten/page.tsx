@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { DAY_NAMES } from '@/lib/constants';
+import { DAY_NAMES, getISOWeek } from '@/lib/constants';
 
 interface CostDish {
   name: string;
@@ -30,14 +30,6 @@ interface CostSummary {
   avg_per_day: number;
   avg_per_guest: number;
   total_pax: number;
-}
-
-function getISOWeek(d: Date): number {
-  const date = new Date(d.getTime());
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
-  const week1 = new Date(date.getFullYear(), 0, 4);
-  return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
 }
 
 function formatEuro(val: number): string {

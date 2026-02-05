@@ -2,22 +2,11 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { DAY_NAMES_SHORT, getISOWeek } from '@/lib/constants';
+import type { Dish, MealSlot, WeekPlan, SlotKey } from '@/lib/types';
 
-interface Dish { id: number; name: string; allergens: string; }
-interface MealSlot {
-  soup: Dish | null; main1: Dish | null; side1a: Dish | null; side1b: Dish | null;
-  main2: Dish | null; side2a: Dish | null; side2b: Dish | null; dessert: Dish | null;
-}
-interface DayPlan {
-  dayOfWeek: number;
-  mittag: { city: MealSlot; sued: MealSlot };
-  abend: { city: MealSlot; sued: MealSlot };
-}
-interface WeekPlan { weekNr: number; days: DayPlan[]; }
-
-const DAY_NAMES_SHORT = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 const SLOT_LABELS = ['Su', 'H1', 'B', 'B', 'H2', 'B', 'B', 'De'];
-const SLOT_KEYS: (keyof MealSlot)[] = ['soup', 'main1', 'side1a', 'side1b', 'main2', 'side2a', 'side2b', 'dessert'];
+const SLOT_KEYS: SlotKey[] = ['soup', 'main1', 'side1a', 'side1b', 'main2', 'side2a', 'side2b', 'dessert'];
 
 function getDish(slot: MealSlot, idx: number): Dish | null {
   const d = slot[SLOT_KEYS[idx]];
@@ -26,13 +15,6 @@ function getDish(slot: MealSlot, idx: number): Dish | null {
 
 export default function DruckPageWrapper() {
   return <Suspense fallback={<div className="text-center py-8">Lade...</div>}><DruckPage /></Suspense>;
-}
-
-function getISOWeek(d: Date): number {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
 
 function DruckPage() {

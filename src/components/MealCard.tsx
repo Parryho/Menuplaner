@@ -3,27 +3,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import AllergenBadge from './AllergenBadge';
-
-interface Dish {
-  id: number;
-  name: string;
-  allergens: string;
-}
-
-interface MealSlot {
-  soup: Dish | null;
-  main1: Dish | null;
-  side1a: Dish | null;
-  side1b: Dish | null;
-  main2: Dish | null;
-  side2a: Dish | null;
-  side2b: Dish | null;
-  dessert: Dish | null;
-}
-
-interface TempData {
-  [slot: string]: { core: string; serving?: string };
-}
+import { getSlotCategory } from '@/lib/constants';
+import type { Dish, MealSlot, TempData } from '@/lib/types';
 
 interface MealCardProps {
   slot: MealSlot;
@@ -39,14 +20,6 @@ interface MealCardProps {
   onTempChange?: (slot: string, core: string, serving?: string) => void;
   onDishChange?: (slotKey: string, dish: Dish | null) => void;
   activeDragCategory?: string | null;
-}
-
-function getSlotCategory(slotKey: string): string {
-  if (slotKey === 'soup') return 'soup';
-  if (slotKey === 'main1' || slotKey === 'main2') return 'main';
-  if (slotKey.startsWith('side')) return 'side';
-  if (slotKey === 'dessert') return 'dessert';
-  return slotKey;
 }
 
 function DishRow({ rowKey, label, isMain, dish, temp, dayOfWeek, meal, location, activeDragCategory, editingSlot, setEditingSlot, onDishChange, onTempChange, rowIndex }: {

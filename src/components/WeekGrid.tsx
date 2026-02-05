@@ -2,29 +2,7 @@
 
 import MealCard from './MealCard';
 import { DAY_NAMES } from '@/lib/constants';
-
-interface Dish {
-  id: number;
-  name: string;
-  allergens: string;
-}
-
-interface MealSlot {
-  soup: Dish | null;
-  main1: Dish | null;
-  side1a: Dish | null;
-  side1b: Dish | null;
-  main2: Dish | null;
-  side2a: Dish | null;
-  side2b: Dish | null;
-  dessert: Dish | null;
-}
-
-interface DayPlan {
-  dayOfWeek: number;
-  mittag: { city: MealSlot; sued: MealSlot };
-  abend: { city: MealSlot; sued: MealSlot };
-}
+import type { Dish, DayPlan } from '@/lib/types';
 
 interface WeekGridProps {
   days: DayPlan[];

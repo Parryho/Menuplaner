@@ -4,46 +4,11 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
 import WeekGrid from '@/components/WeekGrid';
-
-interface WeekPlan {
-  weekNr: number;
-  calendarWeek?: number;
-  year?: number;
-  days: DayPlan[];
-}
-
-interface DayPlan {
-  dayOfWeek: number;
-  mittag: { city: MealSlot; sued: MealSlot };
-  abend: { city: MealSlot; sued: MealSlot };
-}
-
-interface MealSlot {
-  soup: Dish | null;
-  main1: Dish | null;
-  side1a: Dish | null;
-  side1b: Dish | null;
-  main2: Dish | null;
-  side2a: Dish | null;
-  side2b: Dish | null;
-  dessert: Dish | null;
-}
-
-interface Dish {
-  id: number;
-  name: string;
-  allergens: string;
-}
+import { getISOWeek, getSlotCategory } from '@/lib/constants';
+import type { Dish, WeekPlan, DragData } from '@/lib/types';
 
 export default function WochenplanPageWrapper() {
   return <Suspense fallback={<div className="text-center py-8 text-primary-500">Lade...</div>}><WochenplanPage /></Suspense>;
-}
-
-function getISOWeek(d: Date): number {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
 
 // Get ISO dates (YYYY-MM-DD) for each day of a given ISO week
@@ -62,23 +27,6 @@ function getWeekDates(year: number, week: number): Record<number, string> {
     dates[dow] = d.toISOString().split('T')[0];
   }
   return dates;
-}
-
-// Which category group a slot belongs to, for swap compatibility
-function getSlotCategory(slotKey: string): string {
-  if (slotKey === 'soup') return 'soup';
-  if (slotKey === 'main1' || slotKey === 'main2') return 'main';
-  if (slotKey.startsWith('side')) return 'side';
-  if (slotKey === 'dessert') return 'dessert';
-  return slotKey;
-}
-
-interface DragData {
-  dayOfWeek: number;
-  meal: string;
-  location: string;
-  slotKey: string;
-  dish: Dish | null;
 }
 
 function WochenplanPage() {
@@ -112,11 +60,8 @@ function WochenplanPage() {
   // Navigate to current week
   const goToCurrentWeek = () => {
     const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const days = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000);
-    const kw = Math.ceil((days + startOfYear.getDay() + 1) / 7);
     setYear(now.getFullYear());
-    setWeek(kw);
+    setWeek(getISOWeek(now));
   };
 
   const handleDishChange = useCallback((dayOfWeek: number, meal: string, location: string, slotKey: string, dish: Dish | null) => {
