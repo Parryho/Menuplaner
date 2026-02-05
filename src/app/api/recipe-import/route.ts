@@ -2,11 +2,6 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 // Known allergen keywords mapping to codes
 const ALLERGEN_MAP: Record<string, string> = {
@@ -62,7 +57,6 @@ function detectCategory(name: string, ingredients: string[]): string {
 }
 
 export async function POST(request: NextRequest) {
-  ensureDb();
   const db = getDb();
   const body = await request.json();
   const { url } = body;

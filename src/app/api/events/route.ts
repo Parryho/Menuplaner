@@ -2,15 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 export async function GET(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const { searchParams } = new URL(request.url);
     const from = searchParams.get('from');
@@ -51,7 +45,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const body = await request.json();
     const { date, event_type, pax, time_start, time_end, contact_person, room, description, menu_notes, status } = body;
@@ -81,7 +74,6 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const body = await request.json();
     const { id, date, event_type, pax, time_start, time_end, contact_person, room, description, menu_notes, status } = body;
@@ -106,7 +98,6 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

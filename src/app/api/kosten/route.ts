@@ -2,14 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
 import { calculateCost } from '@/lib/units';
 
 type Unit = 'g' | 'kg' | 'ml' | 'l' | 'stueck';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 interface PlanRow {
   day_of_week: number;
@@ -30,7 +25,6 @@ const DEFAULT_PAX: Record<string, number> = { city: 60, sued: 45 };
 
 export async function GET(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const { searchParams } = new URL(request.url);
     const dishId = searchParams.get('dishId');

@@ -2,15 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 export async function GET(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
@@ -41,16 +35,15 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  ensureDb();
-  const db = getDb();
-  const body = await request.json();
-  const { name, category, unit, price_per_unit, price_unit, supplier } = body;
-
-  if (!name || !category || !unit) {
-    return NextResponse.json({ error: 'Name, Kategorie und Einheit erforderlich' }, { status: 400 });
-  }
-
   try {
+    const db = getDb();
+    const body = await request.json();
+    const { name, category, unit, price_per_unit, price_unit, supplier } = body;
+
+    if (!name || !category || !unit) {
+      return NextResponse.json({ error: 'Name, Kategorie und Einheit erforderlich' }, { status: 400 });
+    }
+
     const result = db.prepare(
       'INSERT INTO ingredients (name, category, unit, price_per_unit, price_unit, supplier) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(name, category, unit, price_per_unit || 0, price_unit || 'kg', supplier || '');
@@ -61,13 +54,13 @@ export async function POST(request: NextRequest) {
     if (msg.includes('UNIQUE')) {
       return NextResponse.json({ error: 'Zutat existiert bereits' }, { status: 409 });
     }
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('POST /api/ingredients error:', e);
+    return NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const body = await request.json();
     const { id, name, category, unit, price_per_unit, price_unit, supplier } = body;
@@ -92,7 +85,6 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

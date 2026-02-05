@@ -2,15 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 export async function GET(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const { searchParams } = new URL(request.url);
     const dishId = searchParams.get('dishId');
@@ -44,21 +38,20 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  ensureDb();
-  const db = getDb();
-  const body = await request.json();
-  const { dish_id, ingredient_id, quantity, unit, preparation_note } = body;
-
-  if (!dish_id || !ingredient_id || !quantity || !unit) {
-    return NextResponse.json({ error: 'dish_id, ingredient_id, quantity und unit erforderlich' }, { status: 400 });
-  }
-
-  // Get max sort_order for this dish
-  const maxOrder = db.prepare(
-    'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM recipe_items WHERE dish_id = ?'
-  ).get(dish_id) as { max_order: number };
-
   try {
+    const db = getDb();
+    const body = await request.json();
+    const { dish_id, ingredient_id, quantity, unit, preparation_note } = body;
+
+    if (!dish_id || !ingredient_id || !quantity || !unit) {
+      return NextResponse.json({ error: 'dish_id, ingredient_id, quantity und unit erforderlich' }, { status: 400 });
+    }
+
+    // Get max sort_order for this dish
+    const maxOrder = db.prepare(
+      'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM recipe_items WHERE dish_id = ?'
+    ).get(dish_id) as { max_order: number };
+
     const result = db.prepare(
       'INSERT INTO recipe_items (dish_id, ingredient_id, quantity, unit, preparation_note, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
     ).run(dish_id, ingredient_id, quantity, unit, preparation_note || '', maxOrder.max_order + 1);
@@ -69,13 +62,13 @@ export async function POST(request: NextRequest) {
     if (msg.includes('UNIQUE')) {
       return NextResponse.json({ error: 'Zutat bereits im Rezept' }, { status: 409 });
     }
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('POST /api/recipes error:', e);
+    return NextResponse.json({ error: 'Interner Serverfehler' }, { status: 500 });
   }
 }
 
 export async function PUT(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const body = await request.json();
 
@@ -109,7 +102,6 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

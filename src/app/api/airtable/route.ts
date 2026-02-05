@@ -2,11 +2,6 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 // Airtable API integration (READ-ONLY - niemals nach Airtable schreiben!)
 // Configure via environment variables:
@@ -133,7 +128,6 @@ function mapStatus(airtableStatus: string): string {
 
 // GET: Sync events from Airtable
 export async function GET(request: NextRequest) {
-  ensureDb();
   const { searchParams } = new URL(request.url);
   const action = searchParams.get('action') || 'status';
 
@@ -168,7 +162,6 @@ export async function GET(request: NextRequest) {
 
 // POST: Test connection and show available fields
 export async function POST(request: NextRequest) {
-  ensureDb();
   const body = await request.json();
   const { apiKey, baseId, tableName } = body;
 

@@ -1,14 +1,9 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { seedDatabase } from '@/lib/seed';
 import { getWeeklyPlan, generateWeekFromRotation, DAY_NAMES_SHORT, type MealSlot } from '@/lib/rotation';
 import { getDb } from '@/lib/db';
 import ExcelJS from 'exceljs';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 // Temperature lookup: returns map of "dayOfWeek-meal-location-slot" → { core, serving }
 type TempMap = Record<string, { core: string; serving: string }>;
@@ -57,7 +52,6 @@ function getDishForSlot(slot: MealSlot, idx: number): { name: string; allergens:
 
 export async function GET(request: NextRequest) {
   try {
-    ensureDb();
     const { searchParams } = new URL(request.url);
     const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
     const week = parseInt(searchParams.get('week') || '1');

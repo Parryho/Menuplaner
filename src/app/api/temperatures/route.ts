@@ -2,16 +2,10 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 // GET temperatures for a specific weekly plan
 export async function GET(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const { searchParams } = new URL(request.url);
     const year = searchParams.get('year');
@@ -59,7 +53,6 @@ export async function GET(request: NextRequest) {
 // POST (save/update) a temperature reading
 export async function POST(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const body = await request.json();
     const { year, calendarWeek, dayOfWeek, meal, location, dishSlot, tempCore, tempServing } = body;

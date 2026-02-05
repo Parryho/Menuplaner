@@ -2,16 +2,10 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 // Save OCR-extracted guest counts
 export async function POST(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const body = await request.json();
     const { date, location, meal_type, count } = body;
@@ -36,7 +30,6 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');

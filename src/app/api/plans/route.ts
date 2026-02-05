@@ -2,16 +2,10 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { seedDatabase } from '@/lib/seed';
 import { getRotationWeek, getWeeklyPlan, generateWeekFromRotation } from '@/lib/rotation';
-
-function ensureDb() {
-  seedDatabase();
-}
 
 export async function GET(request: NextRequest) {
   try {
-    ensureDb();
     const { searchParams } = new URL(request.url);
     const year = parseInt(searchParams.get('year') || new Date().getFullYear().toString());
     const week = parseInt(searchParams.get('week') || '1');
@@ -45,7 +39,6 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    ensureDb();
     const db = getDb();
     const body = await request.json();
     const { year, calendarWeek, dayOfWeek, meal, location, slot, dishId } = body;
@@ -83,7 +76,6 @@ export async function PUT(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    ensureDb();
     const body = await request.json();
     const { year, calendarWeek, rotationWeekNr } = body;
 
